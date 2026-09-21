@@ -2026,8 +2026,13 @@ it('shows Send directly before MCP, keeps After this turn selected, and changes 
 it('shows elapsed work for the exact recorded turn without exposing lifecycle rows', async () => {
   const { w, append } = await boot([{ seq: 1, time: T0, source: 'extension', kind: 'turn_start', turnId: 'held-turn' }]);
   expect(w.document.getElementById('chatState')!.textContent).toMatch(/^Working for /);
+  const { setLanguage } = await import('../src/renderer/i18n.js');
+  setLanguage('tr');
+  expect(w.document.getElementById('chatState')!.textContent).toMatch(/\d+ sn · Çalışıyor$/);
   (w as any).api.getSessionControls = (id: string) => Promise.resolve({ ok: true, data: { sessionId: id, automation: 'off', activeTurnId: null, finishHeld: false, blocked: '', job: null } });
   await append([{ seq: 2, time: T0 + 65_000, source: 'extension', kind: 'turn_end', turnId: 'held-turn', outcome: 'completed' }]);
+  expect(w.document.getElementById('chatState')!.textContent).toBe('1 dk 5 sn · Çalıştı');
+  setLanguage('en');
   expect(w.document.getElementById('chatState')!.textContent).toBe('Worked for 1m 5s');
 });
 
