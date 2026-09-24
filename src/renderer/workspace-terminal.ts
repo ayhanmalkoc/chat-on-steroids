@@ -119,11 +119,12 @@ export function createWorkspaceTerminal(onToggleBottom: () => void, initialMount
   paint();
   return {
     update(value: LocalProject | null): void { project = value; paint(); },
-    show(mount: HTMLElement): void {
+    show(mount: HTMLElement, createIfEmpty = true): void {
       if (panel.parentElement !== mount) mount.append(panel);
       setOpen(true);
-      if (!tabs.size && project) void create();
+      if (createIfEmpty && !tabs.size && project) void create();
     },
+    newTab(): void { void create(); },
     hide(): void { setOpen(false); },
     visible(): boolean { return open; },
     hasTabs(): boolean { return tabs.size > 0; }

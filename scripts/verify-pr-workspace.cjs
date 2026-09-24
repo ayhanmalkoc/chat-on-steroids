@@ -116,7 +116,14 @@ app.whenReady().then(async () => {
     assert.equal(await js('document.querySelectorAll("#chatList .sess[data-id]").length'),1);
     await js(`document.querySelector('.sess[data-id="task-0"]').click()`);
     await until('!document.querySelector("#workDockRight .work-dock-quick[data-view=files]").disabled');
-    await js(`document.getElementById('rightDockToggle').click();document.querySelector('#workDockRight .work-dock-quick[data-view=files]').click()`);
+    await js(`document.getElementById('rightDockToggle').click()`);
+    assert.ok(await js(`['review','terminal','files','agents'].every(kind=>!document.querySelector('#workDockRight .work-dock-quick[data-view='+kind+']').disabled)`));
+    await screenshot('dock-shortcuts');
+    await js(`document.querySelector('#workDockRight .work-dock-quick[data-view=review]').click()`);
+    await until('!!document.querySelector("#workDockRight .review-panel:not([hidden])")');
+    await js(`document.querySelector('#workDockRight .work-dock-tab.is-selected .btn-icon').click();document.querySelector('#workDockRight .work-dock-quick[data-view=agents]').click()`);
+    await until('!!document.querySelector("#workDockRight .agent-panel:not([hidden])")');
+    await js(`document.querySelector('#workDockRight .work-dock-tab.is-selected .btn-icon').click();document.querySelector('#workDockRight .work-dock-quick[data-view=files]').click()`);
     await until('document.querySelectorAll(".file-tree-row[data-path]").length>=3');
     await until('document.querySelector(".file-panel-changes-badge")?.textContent==="2"');
     await js(`document.querySelector('.file-panel-changes-toggle').click()`);
@@ -125,6 +132,15 @@ app.whenReady().then(async () => {
     assert.equal(await js('document.querySelector(".review-panel .file-changes-header-title").textContent'),'Working tree');
     assert.equal(await js('document.querySelector(".review-panel .file-change-row[data-path=\\"README.md\\"] .file-change-status").textContent'),'M');
     assert.ok(await js(`!document.querySelector('.review-panel .file-panel-toolbar button[title="New file"],.review-panel .file-panel-toolbar button[title="Delete"]')`));
+    assert.deepEqual(await js(`[...document.querySelectorAll('.header-dock-controls > button')].map(button=>button.id)`),
+      ['terminalToggle','rightDockToggle','rightDockExpand']);
+    assert.equal(await js(`document.getElementById('rightDockExpand').hidden`),false);
+    await js(`document.getElementById('rightDockExpand').click()`);
+    assert.ok(await js(`document.querySelector('[data-panel=chat]').classList.contains('is-work-dock-expanded') && document.getElementById('workDockBottom').hidden`));
+    await screenshot('review-expanded');
+    await js(`document.getElementById('rightDockExpand').click();document.querySelector('#workDockRight .work-dock-tab [role=tab][aria-selected=false]').click()`);
+    await js(`document.querySelector('#workDockRight .work-dock-add summary').click();document.querySelector('#workDockRight .work-dock-menu-item[data-view=review]').click()`);
+    await until('!!document.querySelector("#workDockRight .review-panel:not([hidden])")');
     await js(`document.querySelector('.review-panel .file-change-row[data-path="README.md"]').click()`);
     await until('!!document.querySelector(".review-panel .file-diff-viewer-host .cm-editor")');
     await screenshot('git-diff');

@@ -759,8 +759,9 @@ and nested code-mode calls do not receive or acknowledge these automatic pages.
 `workspace-terminal.ts` and `workspace-terminal-ipc.ts` own human-operated node-pty shells;
 `renderer/workspace-terminal.ts` renders them with xterm and FitAddon. These shells are separate
 from MCP process custody and never consume agent output. `renderer/workspace-docks.ts` places
-the same terminal view in the right or bottom dock. The bottom header button opens that dock;
-Ctrl+backtick toggles its terminal view. Moving or hiding the view never restarts a PTY.
+Terminal only in the bottom dock. The bottom header button and Ctrl+backtick toggle that dock;
+its first opening starts a shell when a project is selected. The right dock's Terminal shortcut
+and `+` menu create a new bottom terminal tab. Hiding the dock never restarts a PTY.
 Each new terminal tab captures the selected approved project's canonical cwd;
 changing chats does not retarget existing shells. No project means no guessed cwd. The live
 Command permission gates spawn/input, and input rechecks the original project path.
@@ -2840,14 +2841,16 @@ refresh complete or starts a browser action.
 The Files panel projects the current session's LocalProject through fixed IPC using a project
 UUID and relative paths. It does not change the main composer or grant additional filesystem
 access. Main re-resolves current approved roots and rejects traversal, symbolic links/junctions
-and project-root mutation. The renderer's `workspace-docks.ts` owns both dock frames,
-their tab strips, launchers and right-panel expansion; Files, Review and Sub-agents retain their
-own content and async lifetimes. Closing the right dock hides its active tool but retains
-its tab selection. Files, Review and Terminal are singleton renderer views movable between
-right and bottom docks; Sub-agents remains right-only. Moving Files retains its editor and unsaved draft;
-hiding it retires file watches. Terminal may hold up to eight distinct PTYs in either location.
-The top-right pair toggles right and bottom workspaces; layout controls grant no new file,
-terminal or worker authority.
+and project-root mutation. The renderer's `workspace-docks.ts` owns the right tool dock and
+bottom terminal dock; Files, Review, Sub-agents and Terminal retain their own content and async
+lifetimes. Closing the right dock hides its active tool but retains its tab selection. Only the
+right dock has launcher shortcuts, tool tabs and a `+` tool menu. Its Files, Review and
+Sub-agents actions open right tabs; Terminal actions create a bottom terminal tab. The bottom
+dock has no generic shortcut screen or second tool tab strip; Terminal owns its own tabs there.
+Hiding Files retires its watches without discarding an unsaved draft. Hiding the bottom dock
+does not retire its PTYs; closing a terminal tab does. The top-right control group orders
+bottom, right, then right expansion (shown only while right is open); the first two buttons
+toggle their panels. Layout controls grant no new file, terminal or worker authority.
 The sub-agent overview starts directly with Active and History, without a heading or close X.
 Its tab close or Escape closes the pane; a selected worker retains its title and Back button.
 Directories load one level at a time (500 entries); at most 128 expanded directory watches are
@@ -2860,8 +2863,8 @@ approved project/root and Git metadata before reading status or a diff. Git insp
 read-only: it strips inherited Git repository/index redirects, uses optional-lock-free bounded
 subprocesses and exposes no stage, commit, reset,
 checkout or push authority. Review projects `M/A/D/R/U`, ancestor-folder markers and
-bounded unified diffs; Files may open it from its toolbar. Files and Review can remain visible
-in separate docks, while Review does not add a second file watcher or expose file-write actions.
+bounded unified diffs; Files may open it from its toolbar. Files and Review are alternate right
+tabs; Review does not add a second file watcher or expose file-write actions.
 A non-repository, binary file, oversized diff or truncated change set is an
 explicit state rather than a reason to invent content or mutate the worktree.
 

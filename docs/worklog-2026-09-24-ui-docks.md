@@ -44,3 +44,20 @@
   passed. The Electron fixture exercises the independent Review tab, working
   tree diff, return to Files, editor draft, PDF and responsive layouts. Final
   `dev` and package evidence are recorded separately below.
+## Follow-up — dedicated bottom Terminal and working right actions
+
+- Root cause of inert right shortcuts/`+` entries: Files, Review and Agents
+  availability was inferred from their deliberately hidden legacy toggle
+  buttons. The dock now uses the selected local project or chat identity.
+- Removed the bottom generic launcher, tool tabs and `+` menu. Its control
+  toggles the Terminal directly; right-side Terminal actions create a new
+  bottom terminal tab. The top-right controls are ordered bottom, right,
+  expansion, with expansion visible only while the right dock is open.
+- Checks: typecheck, focused dock/File/Timeline tests, isolated Electron
+  workspace UI and real PowerShell PTY scenarios passed. Electron exercised
+  right Review/Agents/Files shortcuts, the Review `+` entry, right Terminal
+  shortcut and `+` entry, bottom hide/reopen continuity and terminal tab close.
+  `npm run verify` again passed privacy, notices and typecheck but reported the
+  same two Windows UI Automation failures and PowerShell parser-recovery
+  assertion; the broad run was stopped after those known failures. No
+  full-suite pass is claimed. This follow-up was not packaged or installed.

@@ -3973,7 +3973,7 @@ export function initChat(next: Deps): void {
   const agentToolGroups = new Map<string, HTMLDetailsElement>();
   agentPanel = createAgentPanel({
     host: chatHost, mount: docks.body, toggle: agentToggle,
-    onShow: () => { if (docks.sideOf('files') === 'right') filePanel?.hide(); docks.adopt('agents'); },
+    onShow: () => { filePanel?.hide(); docks.adopt('agents'); },
     onEscape: () => { docks.setOpen(false); docks.rightToggle.focus(); },
     load: id => run(api.getSession(id, { limit: 160 })), openMain: selectSession, working: sessionWorking,
     render: (source, id, current) => {
@@ -4150,14 +4150,10 @@ export function initChat(next: Deps): void {
   filePanel = createFilePanel({
     host: chatHost, mount: docks.body, toggle: fileToggle,
     onShow: () => {
-      if (docks.sideOf('files') !== 'bottom') agentPanel?.hide();
-      docks.adopt('files', docks.sideOf('files') ?? 'right');
+      agentPanel?.hide(); docks.adopt('files');
     },
-    onOpenChanges: () => docks.activate('review', docks.sideOf('files') ?? 'right'),
-    onEscape: () => {
-      if (docks.sideOf('files') === 'bottom') { docks.setBottomOpen(false); docks.bottomToggle.focus(); }
-      else { docks.setOpen(false); docks.rightToggle.focus(); }
-    },
+    onOpenChanges: () => docks.activate('review'),
+    onEscape: () => { docks.setOpen(false); docks.rightToggle.focus(); },
     captureAttachment: () => {
       const owner = composerDraftOwner();
       return attachment => appendImages(owner, [attachment]);
@@ -4168,24 +4164,22 @@ export function initChat(next: Deps): void {
   reviewToggle.hidden = true; reviewToggle.type = 'button'; chatHost.append(reviewToggle);
   reviewPanel = createFilePanel({
     host: chatHost, mount: docks.body, toggle: reviewToggle, reviewOnly: true,
-    onShow: () => docks.adopt('review', docks.sideOf('review') ?? 'right'),
-    onEscape: () => {
-      if (docks.sideOf('review') === 'bottom') { docks.setBottomOpen(false); docks.bottomToggle.focus(); }
-      else { docks.setOpen(false); docks.rightToggle.focus(); }
-    }
+    onShow: () => docks.adopt('review'),
+    onEscape: () => { docks.setOpen(false); docks.rightToggle.focus(); }
   });
   reviewPanel.update(selectedLocalProject());
   workspaceTerminal = createWorkspaceTerminal(() => docks.toggleBottomTerminal(), docks.bottomBody);
   workspaceTerminal.update(selectedLocalProject());
-  docks.register('review', 'Review', 'i-git-diff', (_side, mount) => {
+  docks.register('review', 'Review', 'i-git-diff', mount => {
     reviewPanel?.mountAt(mount); void reviewPanel?.show();
-  }, () => reviewPanel?.hide(), () => !reviewToggle.hidden, ['right', 'bottom']);
-  docks.register('terminal', 'Terminal', 'i-terminal', (_side, mount) => workspaceTerminal?.show(mount),
-    () => workspaceTerminal?.hide(), () => selectedLocalProject() !== null || !!workspaceTerminal?.hasTabs(), ['right', 'bottom']);
-  docks.register('files', 'Files', 'i-folder', (_side, mount) => {
+  }, () => reviewPanel?.hide(), () => selectedLocalProject() !== null);
+  docks.registerTerminal((mount, createIfEmpty) => workspaceTerminal?.show(mount, createIfEmpty),
+    () => workspaceTerminal?.hide(), () => selectedLocalProject() !== null,
+    () => workspaceTerminal?.newTab());
+  docks.register('files', 'Files', 'i-folder', mount => {
     filePanel?.mountAt(mount); void filePanel?.show();
-  }, () => filePanel?.hide(), () => !fileToggle.hidden, ['right', 'bottom']);
-  docks.register('agents', 'Sub-agents', 'i-agents', () => agentPanel?.show(), () => agentPanel?.hide(), () => !agentToggle.hidden);
+  }, () => filePanel?.hide(), () => selectedLocalProject() !== null);
+  docks.register('agents', 'Sub-agents', 'i-agents', () => agentPanel?.show(), () => agentPanel?.hide(), () => selectedId !== null);
   $('attachImages').addEventListener('click', async () => {
     const owner = composerDraftOwner();
     appendImages(owner, await run(api.chooseFiles()));

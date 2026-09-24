@@ -12,69 +12,87 @@ function setup() {
   return { host, docks: createWorkspaceDocks(host) };
 }
 
-it('opens an empty right dock, presents only registered actions, and restores the original width after expansion', () => {
-  const { host, docks } = setup();
-  const files = vi.fn(), hideFiles = vi.fn();
-  docks.register('files', 'Files', 'i-folder', files, hideFiles, () => true);
-  const right = document.getElementById('workDockRight')!;
-  expect(right.hidden).toBe(true);
-  document.getElementById('rightDockToggle')!.click();
-  expect(right.hidden).toBe(false);
-  expect(right.querySelector('.work-dock-empty')!.hasAttribute('hidden')).toBe(false);
-  expect(right.querySelectorAll('.work-dock-quick')).toHaveLength(1);
-  right.querySelector<HTMLButtonElement>('.work-dock-quick')!.click();
-  expect(files).toHaveBeenCalledOnce();
-  expect(right.querySelectorAll('[role="tab"]')).toHaveLength(1);
-  const selectedTab = right.querySelector<HTMLButtonElement>('[role="tab"]')!;
-  selectedTab.focus(); docks.sync();
-  expect(document.activeElement).toBe(selectedTab);
+it('orders bottom, right and expansion controls; toggles panels and keeps expansion available only while right is open', () => {
+  const { host } = setup();
+  const controls = [...document.querySelectorAll<HTMLButtonElement>('.header-dock-controls > button')];
+  expect(controls.map(button => button.id)).toEqual(['terminalToggle', 'rightDockToggle', 'rightDockExpand']);
+  const right = document.getElementById('workDockRight')!, bottom = document.getElementById('workDockBottom')!;
+  expect(controls[2]!.hidden).toBe(true);
+  controls[0]!.click(); expect(bottom.hidden).toBe(false);
+  expect(bottom.querySelector('.work-dock-empty, .work-dock-quick, .work-dock-add')).toBeNull();
+  controls[0]!.click(); expect(bottom.hidden).toBe(true);
+  controls[1]!.click(); expect(right.hidden).toBe(false);
+  expect(controls[2]!.hidden).toBe(false);
   host.style.setProperty('--work-panel-width', '410px');
-  right.querySelectorAll<HTMLButtonElement>('.work-dock-bar > button')[0]!.click();
-  expect(host.classList.contains('is-work-dock-expanded')).toBe(true);
-  right.querySelectorAll<HTMLButtonElement>('.work-dock-bar > button')[0]!.click();
-  expect(host.classList.contains('is-work-dock-expanded')).toBe(false);
+  controls[2]!.click(); expect(host.classList.contains('is-work-dock-expanded')).toBe(true);
+  controls[2]!.click(); expect(host.classList.contains('is-work-dock-expanded')).toBe(false);
   expect(host.style.getPropertyValue('--work-panel-width')).toBe('410px');
-  document.getElementById('rightDockToggle')!.click();
-  expect(hideFiles).toHaveBeenCalledOnce();
-  expect(right.hidden).toBe(true);
-  expect(right.querySelectorAll('[role="tab"]')).toHaveLength(1);
-  document.getElementById('rightDockToggle')!.click();
-  expect(files).toHaveBeenCalledTimes(2);
+  controls[1]!.click(); expect(right.hidden).toBe(true); expect(controls[2]!.hidden).toBe(true);
 });
 
-it('does not activate an unavailable view or leave a blank selected tab', () => {
+it('enables right quick actions and plus-menu entries from live scope, then opens the chosen tab', () => {
   const { docks } = setup();
   let available = false;
-  const files = vi.fn();
-  docks.register('files', 'Files', 'i-folder', files, vi.fn(), () => available);
-  const quick = document.querySelector<HTMLButtonElement>('.work-dock-quick')!;
-  expect(quick.disabled).toBe(true);
-  docks.activate('files');
-  expect(files).not.toHaveBeenCalled();
+  const files = vi.fn(), hideFiles = vi.fn();
+  docks.register('files', 'Files', 'i-folder', files, hideFiles, () => available);
+  const quick = document.querySelector<HTMLButtonElement>('#workDockRight .work-dock-quick[data-view=files]')!;
+  const menu = document.querySelector<HTMLButtonElement>('#workDockRight .work-dock-menu-item[data-view=files]')!;
+  expect(quick.disabled).toBe(true); expect(menu.disabled).toBe(true);
   available = true; docks.sync();
-  expect(quick.disabled).toBe(false);
-  docks.activate('files');
-  expect(files).toHaveBeenCalledOnce();
-  available = false; docks.sync();
-  expect(document.querySelector('.work-dock-empty')!.hasAttribute('hidden')).toBe(false);
+  expect(quick.disabled).toBe(false); expect(menu.disabled).toBe(false);
+  document.getElementById('rightDockToggle')!.click();
+  quick.click(); expect(files).toHaveBeenCalledOnce();
+  const right = document.getElementById('workDockRight')!;
+  expect(right.querySelectorAll('[role=tab]')).toHaveLength(1);
+  const selected = right.querySelector<HTMLButtonElement>('[role=tab]')!;
+  selected.focus(); docks.sync(); expect(document.activeElement).toBe(selected);
+  document.getElementById('rightDockToggle')!.click(); expect(hideFiles).toHaveBeenCalledOnce();
+  document.getElementById('rightDockToggle')!.click(); expect(files).toHaveBeenCalledTimes(2);
+  right.querySelector<HTMLElement>('.work-dock-add summary')!.click();
+  menu.click(); expect(files).toHaveBeenCalledTimes(3);
+  expect((right.querySelector('.work-dock-add') as HTMLDetailsElement).open).toBe(false);
 });
 
-it('moves one Files view between docks without recreating it and keeps Terminal custody when hidden', () => {
+it('routes Terminal from right shortcuts and plus to a new bottom tab, never to the right dock', () => {
   const { docks } = setup();
-  const fileNode = document.createElement('section'); fileNode.id = 'file-owner';
-  const terminalNode = document.createElement('section'); terminalNode.id = 'terminal-owner';
-  docks.register('files', 'Files', 'i-folder', (_side, mount) => { mount.append(fileNode); fileNode.hidden = false; },
-    () => { fileNode.hidden = true; }, () => true, ['right', 'bottom']);
-  docks.register('terminal', 'Terminal', 'i-terminal', (_side, mount) => { mount.append(terminalNode); terminalNode.hidden = false; },
-    () => { terminalNode.hidden = true; }, () => true, ['right', 'bottom']);
-  docks.activate('files', 'right'); docks.activate('terminal', 'bottom');
-  expect(fileNode.parentElement).toBe(docks.body);
-  expect(terminalNode.parentElement).toBe(docks.bottomBody);
-  docks.activate('files', 'bottom');
-  expect(fileNode.parentElement).toBe(docks.bottomBody);
-  expect(docks.sideOf('files')).toBe('bottom');
-  expect(terminalNode.hidden).toBe(true);
-  docks.activate('terminal', 'right');
-  expect(terminalNode.parentElement).toBe(docks.body);
-  expect(terminalNode).toBe(document.getElementById('terminal-owner'));
+  const show = vi.fn(), hide = vi.fn(), newTab = vi.fn();
+  docks.registerTerminal(show, hide, () => true, newTab);
+  const right = document.getElementById('workDockRight')!, bottom = document.getElementById('workDockBottom')!;
+  document.getElementById('rightDockToggle')!.click();
+  right.querySelector<HTMLButtonElement>('.work-dock-quick[data-view=terminal]')!.click();
+  expect(bottom.hidden).toBe(false); expect(show).toHaveBeenCalledWith(docks.bottomBody, false);
+  expect(newTab).toHaveBeenCalledTimes(1);
+  expect(right.querySelectorAll('[role=tab]')).toHaveLength(0);
+  right.querySelector<HTMLElement>('.work-dock-add summary')!.click();
+  right.querySelector<HTMLButtonElement>('.work-dock-menu-item[data-view=terminal]')!.click();
+  expect(newTab).toHaveBeenCalledTimes(2);
+  document.getElementById('terminalToggle')!.click(); expect(bottom.hidden).toBe(true); expect(hide).toHaveBeenCalledOnce();
+  document.getElementById('terminalToggle')!.click(); expect(show).toHaveBeenLastCalledWith(docks.bottomBody, true);
+  expect(newTab).toHaveBeenCalledTimes(2);
+  expect(bottom.querySelector('.work-dock-bar, .work-dock-launch')).toBeNull();
+});
+
+it('hides the old right view when a recorded edit directly adopts Review', () => {
+  const { docks } = setup();
+  const hideFiles = vi.fn();
+  docks.register('files', 'Files', 'i-folder', vi.fn(), hideFiles, () => true);
+  docks.register('review', 'Review', 'i-git-diff', vi.fn(), vi.fn(), () => true);
+  docks.activate('files'); docks.adopt('review');
+  expect(hideFiles).toHaveBeenCalledOnce();
+  expect(document.querySelector('#workDockRight [role=tab][aria-selected=true]')?.textContent).toContain('Review');
+});
+
+it('keeps Ctrl+backtick for bottom visibility and Ctrl+Shift+1–4 for scoped actions', () => {
+  const { docks } = setup();
+  const review = vi.fn(), files = vi.fn(), agents = vi.fn(), newTab = vi.fn();
+  docks.register('review', 'Review', 'i-git-diff', review, vi.fn(), () => true);
+  docks.registerTerminal(vi.fn(), vi.fn(), () => true, newTab);
+  docks.register('files', 'Files', 'i-folder', files, vi.fn(), () => true);
+  docks.register('agents', 'Sub-agents', 'i-agents', agents, vi.fn(), () => true);
+  const key = (value: string, shiftKey = false) => document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: value, ctrlKey: true, shiftKey, bubbles: true }));
+  key('`'); expect(document.getElementById('workDockBottom')!.hidden).toBe(false);
+  key('`'); expect(document.getElementById('workDockBottom')!.hidden).toBe(true);
+  for (const number of ['1', '2', '3', '4']) key(number, true);
+  expect(review).toHaveBeenCalledOnce(); expect(newTab).toHaveBeenCalledOnce();
+  expect(files).toHaveBeenCalledOnce(); expect(agents).toHaveBeenCalledOnce();
 });
