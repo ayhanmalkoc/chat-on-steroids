@@ -64,6 +64,12 @@ app.whenReady().then(async () => {
         listProjectFiles:(id,directory='')=>ok({projectId:id,projectName:'Demo workspace',directory,truncated:false,
           entries:['README.md','example.ts','preview.pdf'].map(name=>({name,path:name,kind:'file',bytes:files[name]?.length??${pdf.length}}))}),
         watchProjectFiles:()=>ok(true),previewProjectFile:(id,name)=>ok(info(id,name)),
+        getProjectGitSnapshot:id=>ok({projectId:id,state:'ready',truncated:false,revision:'fixture-dirty',changes:[
+          {status:'M',path:'README.md',additions:2,deletions:1,binary:false},
+          {status:'U',path:'notes.txt',additions:3,deletions:0,binary:false}
+        ]}),
+        getProjectGitDiff:(id,name)=>ok({projectId:id,status:'M',path:name,additions:2,deletions:1,binary:false,tooLarge:false,
+          baseText:'# Demo workspace\\n',currentText:'# Demo workspace\\n\\nUpdated in the working tree.\\n'}),
         attachProjectFile:(id,name)=>{window.fixtureAttached.push({id,name});return ok({id:'file-1',name,size:12,mimeType:'text/plain'});},
         saveProjectFile:(id,name,text)=>{files[name]=text;window.fixtureSaves.push({id,name,text});return ok({preview:info(id,name)});},
         writeClipboard:()=>ok(true),connect:()=>{state.status.state='connected';return ok(state)},disconnect:()=>{state.status.state='disconnected';return ok(state)}
@@ -112,6 +118,22 @@ app.whenReady().then(async () => {
     await until('!document.getElementById("filePanelToggle").hidden');
     await js(`document.getElementById('filePanelToggle').click()`);
     await until('document.querySelectorAll(".file-tree-row[data-path]").length>=3');
+    await until('document.querySelector(".file-panel-changes-badge")?.textContent==="2"');
+    await js(`document.querySelector('.file-panel-changes-toggle').click()`);
+    await until('!document.querySelector(".file-changes-view").hidden && document.querySelectorAll(".file-change-row").length===2');
+    await screenshot('git-changes');
+    assert.equal(await js('document.querySelector(".file-changes-header-title").textContent'),'Working tree');
+    assert.equal(await js('document.querySelector(".file-change-row[data-path=\\"README.md\\"] .file-change-status").textContent'),'M');
+    assert.ok(await js(`['New file','New folder','Rename','Delete','Reveal'].every(label=>[...document.querySelectorAll('.file-panel-toolbar button')].find(button=>button.textContent.includes(label))?.disabled)`));
+    await js(`document.querySelector('.file-change-row[data-path="README.md"]').click()`);
+    await until('!!document.querySelector(".file-diff-viewer-host .cm-editor")');
+    await screenshot('git-diff');
+    assert.equal(await js('document.querySelector(".file-changes-header-title").textContent'),'Diff');
+    assert.ok(await js('document.querySelector(".file-preview-meta").textContent.includes("README.md")'));
+    await js(`document.querySelector('.file-changes-back').click()`);
+    await until('document.querySelector(".file-changes-header-title").textContent==="Working tree"');
+    await js(`document.querySelector('.file-changes-back').click()`);
+    await until('!document.querySelector(".file-tree").hidden');
     await js(`document.querySelector('.file-tree-row[data-path="README.md"]').click()`);
     await until('!!document.querySelector(".file-preview-markdown h1")');
     for (const [width, height, zoom, language] of [[1500,1000,1.17,'en'],[1100,850,1,'es'],[820,740,1.17,'es'],[1100,850,1.17,'zh-TW']]) {
@@ -128,7 +150,7 @@ app.whenReady().then(async () => {
     await js(`window.fixture.setLanguage('en');document.querySelector('.file-tree-row[data-path="example.ts"]').click()`);
     await until('!!document.querySelector(".file-preview .cm-editor")');
     await js(`document.querySelector('.file-preview [title="Edit"]').click()`);
-    await until('!!document.querySelector(".file-editor-save")');
+    await until('!!document.querySelector(".file-editor-save") && !!document.querySelector(".file-preview.is-editing .cm-editor")');
     await js(`window.fixture.edit('export const value = 2;')`);
     await js(`document.querySelector('.sess[data-id="task-1"]').click();document.querySelector('.sess[data-id="task-0"]').click()`);
     await until('!!document.querySelector(".file-editor-save") && document.querySelector(".file-preview .cm-content")?.textContent.includes("value = 2")');
@@ -221,9 +243,8 @@ app.whenReady().then(async () => {
     await until('document.getElementById("headerConnect").hidden && document.getElementById("sidebarConnection").classList.contains("is-connected")');
     const errors=await js('window.fixtureErrors');
     assert.deepEqual(errors,[]);
-    fs.writeFileSync(path.join(output,'results.json'),JSON.stringify({renderer:'current source in Chromium; synthetic backend',results,save:true,draftRoundTrip:true,pdf:true,diagnostics:bounds,skillsDraftRoundTrip:true,sharedLibrary:true,sidebar:true,composer,errors},null,2));
-    console.log('PASS: current renderer Files layouts, real editor draft navigation, PDF rendering, diagnostics, Skills chips/shared library, Projects/Chats, Spanish and Traditional Chinese. '+output);
+    fs.writeFileSync(path.join(output,'results.json'),JSON.stringify({renderer:'current source in Chromium; synthetic backend',results,save:true,draftRoundTrip:true,gitChanges:true,pdf:true,diagnostics:bounds,skillsDraftRoundTrip:true,sharedLibrary:true,sidebar:true,composer,errors},null,2));
+    console.log('PASS: current renderer Files layouts, read-only Git Changes/diff, real editor draft navigation, PDF rendering, diagnostics, Skills chips/shared library, Projects/Chats, Spanish and Traditional Chinese. '+output);
   } finally { win?.destroy(); await server?.close(); }
   app.exit(0);
 }).catch(error=>{console.error(error);app.exit(1)});
-
