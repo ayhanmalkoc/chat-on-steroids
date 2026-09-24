@@ -1393,5 +1393,14 @@
   "Terminal height": "Altura del terminal",
   "Open a terminal in this project": "Abrir un terminal en este proyecto",
   "Select a project to open a terminal": "Selecciona un proyecto para abrir un terminal",
-  "Terminal input is busy. Try a smaller paste.": "La entrada del terminal está ocupada. Intenta pegar menos texto."
+  "Terminal input is busy. Try a smaller paste.": "La entrada del terminal está ocupada. Intenta pegar menos texto.",
+  "Right panel": "Panel derecho",
+  "New tab": "Nueva pestaña",
+  "Hide right panel": "Ocultar panel derecho",
+  "Restore right panel": "Restaurar panel derecho",
+  "Expand right panel": "Ampliar panel derecho",
+  "Toggle right panel": "Mostrar u ocultar panel derecho",
+  "Toggle bottom panel": "Mostrar u ocultar panel inferior",
+  "Toggle bottom panel (Ctrl+`)": "Mostrar u ocultar panel inferior (Ctrl+`)",
+  "Close tab": "Cerrar pestaña"
 }

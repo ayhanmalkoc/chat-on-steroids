@@ -1393,5 +1393,14 @@
   "Terminal height": "终端高度",
   "Open a terminal in this project": "在此项目中打开终端",
   "Select a project to open a terminal": "选择一个项目以打开终端",
-  "Terminal input is busy. Try a smaller paste.": "终端输入繁忙，请减少粘贴的文本。"
+  "Terminal input is busy. Try a smaller paste.": "终端输入繁忙，请减少粘贴的文本。",
+  "Right panel": "右侧面板",
+  "New tab": "新建标签页",
+  "Hide right panel": "隐藏右侧面板",
+  "Restore right panel": "还原右侧面板",
+  "Expand right panel": "展开右侧面板",
+  "Toggle right panel": "切换右侧面板",
+  "Toggle bottom panel": "切换底部面板",
+  "Toggle bottom panel (Ctrl+`)": "切换底部面板 (Ctrl+`)",
+  "Close tab": "关闭标签页"
 }

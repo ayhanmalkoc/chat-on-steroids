@@ -1429,5 +1429,14 @@
   "Illustrative example. ChatGPT’s appearance may vary.": "説明用の例です。ChatGPT の表示は異なる場合があります。",
   "Illustrative ChatGPT tool approval showing Deny, Allow once, and Always allow": "Deny、Allow once、Always allow を表示した ChatGPT のツール承認画面の例",
   "Files were not added because the draft changed.": "下書きが変更されたため、ファイルを追加しませんでした。",
-  "Reached": "到達"
+  "Reached": "到達",
+  "Right panel": "右パネル",
+  "New tab": "新しいタブ",
+  "Hide right panel": "右パネルを隠す",
+  "Restore right panel": "右パネルを元に戻す",
+  "Expand right panel": "右パネルを拡大",
+  "Toggle right panel": "右パネルを切り替え",
+  "Toggle bottom panel": "下部パネルを切り替え",
+  "Toggle bottom panel (Ctrl+`)": "下部パネルを切り替え (Ctrl+`)",
+  "Close tab": "タブを閉じる"
 }

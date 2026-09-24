@@ -1450,5 +1450,14 @@
   "A little wooden companion with a baseball bat.": "Un petit compagnon en bois avec une batte de baseball.",
   "A crocodile bomber with tiny propellers and a big personality.": "Un crocodile bombardier avec de petites hélices et une forte personnalité.",
   "Auto-connect": "Connexion automatique",
-  "{0}: drag, click, or open the context menu": "{0} : glisser, cliquer ou ouvrir le menu contextuel"
+  "{0}: drag, click, or open the context menu": "{0} : glisser, cliquer ou ouvrir le menu contextuel",
+  "Right panel": "Panneau droit",
+  "New tab": "Nouvel onglet",
+  "Hide right panel": "Masquer le panneau droit",
+  "Restore right panel": "Rétablir le panneau droit",
+  "Expand right panel": "Agrandir le panneau droit",
+  "Toggle right panel": "Afficher ou masquer le panneau droit",
+  "Toggle bottom panel": "Afficher ou masquer le panneau inférieur",
+  "Toggle bottom panel (Ctrl+`)": "Afficher ou masquer le panneau inférieur (Ctrl+`)",
+  "Close tab": "Fermer l’onglet"
 }
