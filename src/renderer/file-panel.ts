@@ -448,7 +448,7 @@ export function createFilePanel(options: FilePanelOptions) {
     generation++;
     destroyPdfViewer();
     pane.hidden = true;
-    options.host.classList.remove('has-file-panel');
+    if (!options.mount) options.host.classList.remove('has-file-panel');
     options.toggle.setAttribute('aria-expanded', 'false');
     syncWatches();
   }
@@ -457,7 +457,7 @@ export function createFilePanel(options: FilePanelOptions) {
     if (!project) return;
     options.onShow?.();
     pane.hidden = false;
-    options.host.classList.add('has-file-panel');
+    if (!options.mount) options.host.classList.add('has-file-panel');
     options.toggle.setAttribute('aria-expanded', 'true');
     if (!listings.has('')) await loadDirectory('');
     else render();
@@ -1081,6 +1081,7 @@ export function createFilePanel(options: FilePanelOptions) {
   return {
     hide,
     show,
+    mountAt(parent: HTMLElement): void { if (pane.parentElement !== parent) parent.append(pane); },
     visible: () => !pane.hidden,
     update(next: LocalProject | null): void {
       const changed = project?.id !== next?.id;

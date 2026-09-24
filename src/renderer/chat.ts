@@ -3951,7 +3951,7 @@ export function initChat(next: Deps): void {
   const agentToolGroups = new Map<string, HTMLDetailsElement>();
   agentPanel = createAgentPanel({
     host: chatHost, mount: docks.body, toggle: agentToggle,
-    onShow: () => { filePanel?.hide(); docks.adopt('agents'); },
+    onShow: () => { if (docks.sideOf('files') === 'right') filePanel?.hide(); docks.adopt('agents'); },
     load: id => run(api.getSession(id, { limit: 160 })), openMain: selectSession, working: sessionWorking,
     render: (source, id, current) => {
       let boundary = '';
@@ -4126,17 +4126,24 @@ export function initChat(next: Deps): void {
   };
   filePanel = createFilePanel({
     host: chatHost, mount: docks.body, toggle: fileToggle,
-    onShow: () => { agentPanel?.hide(); docks.adopt('files'); },
+    onShow: () => {
+      if (docks.sideOf('files') !== 'bottom') agentPanel?.hide();
+      docks.adopt('files', docks.sideOf('files') ?? 'right');
+    },
     captureAttachment: () => {
       const owner = composerDraftOwner();
       return attachment => appendImages(owner, [attachment]);
     }
   });
   filePanel.update(selectedLocalProject());
-  docks.register('files', 'Files', 'i-folder', () => void filePanel?.show(), () => filePanel?.hide(), () => !fileToggle.hidden);
+  docks.register('files', 'Files', 'i-folder', (_side, mount) => {
+    filePanel?.mountAt(mount); void filePanel?.show();
+  }, () => filePanel?.hide(), () => !fileToggle.hidden, ['right', 'bottom']);
   docks.register('agents', 'Sub-agents', 'i-agents', () => agentPanel?.show(), () => agentPanel?.hide(), () => !agentToggle.hidden);
-  workspaceTerminal = createWorkspaceTerminal(docks.bottomToggle);
+  workspaceTerminal = createWorkspaceTerminal(() => docks.toggleBottomTerminal(), docks.bottomBody);
   workspaceTerminal.update(selectedLocalProject());
+  docks.register('terminal', 'Terminal', 'i-terminal', (_side, mount) => workspaceTerminal?.show(mount),
+    () => workspaceTerminal?.hide(), () => selectedLocalProject() !== null || !!workspaceTerminal?.hasTabs(), ['right', 'bottom']);
   $('attachImages').addEventListener('click', async () => {
     const owner = composerDraftOwner();
     appendImages(owner, await run(api.chooseFiles()));

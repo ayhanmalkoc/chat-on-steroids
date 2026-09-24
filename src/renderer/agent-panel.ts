@@ -27,11 +27,14 @@ export function createAgentPanel(options: {
   let generation = 0;
   function hide(): void {
     generation++; pane.hidden = true; selected = null;
-    options.host.classList.remove('has-agent-panel'); options.toggle.setAttribute('aria-expanded', 'false');
+    if (!options.mount) options.host.classList.remove('has-agent-panel');
+    options.toggle.setAttribute('aria-expanded', 'false');
   }
   function show(): void {
     options.onShow?.();
-    pane.hidden = false; options.host.classList.add('has-agent-panel'); options.toggle.setAttribute('aria-expanded', 'true');
+    pane.hidden = false;
+    if (!options.mount) options.host.classList.add('has-agent-panel');
+    options.toggle.setAttribute('aria-expanded', 'true');
   }
   function list(): void {
     generation++; selected = null; head.hidden = true; body.replaceChildren();
