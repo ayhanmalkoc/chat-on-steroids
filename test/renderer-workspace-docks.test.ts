@@ -65,25 +65,73 @@ it('enables right quick actions and plus-menu entries from live scope, then open
 
 it('keeps right and bottom Terminal actions in their own dock', () => {
   const { docks } = setup();
-  const rightShow = vi.fn(), rightNewTab = vi.fn(), bottomShow = vi.fn(), bottomHide = vi.fn();
-  docks.registerTerminal({ show: rightShow, hide: vi.fn(), canCreate: () => true, newTab: rightNewTab },
-    { show: bottomShow, hide: bottomHide, canCreate: () => true, newTab: vi.fn() });
+  const rightShow = vi.fn(), rightHide = vi.fn(), bottomShow = vi.fn(), bottomHide = vi.fn();
+  const terminalTabs: { id: string; title: string; exited: boolean }[] = [];
+  const rightNewTab = vi.fn(() => {
+    const id = `pty-${terminalTabs.length + 1}`;
+    terminalTabs.push({ id, title: `project · powershell ${id}`, exited: false }); return id;
+  });
+  const rightCloseTab = vi.fn((id: string) => terminalTabs.splice(terminalTabs.findIndex(tab => tab.id === id), 1));
+  const rightSelectTab = vi.fn();
+  docks.registerTerminal({ show: rightShow, hide: rightHide, canCreate: () => true, newTab: rightNewTab,
+    tabs: () => terminalTabs, selectTab: rightSelectTab, closeTab: rightCloseTab },
+    { show: bottomShow, hide: bottomHide });
   const right = document.getElementById('workDockRight')!, bottom = document.getElementById('workDockBottom')!;
   document.getElementById('rightDockToggle')!.click();
   right.querySelector<HTMLElement>('.work-dock-add summary')!.click();
   right.querySelector<HTMLButtonElement>('.work-dock-menu-item[data-view=terminal]')!.click();
   expect(right.hidden).toBe(false); expect(bottom.hidden).toBe(true);
-  expect(rightShow).toHaveBeenCalledWith(docks.body, true);
+  expect(rightShow).toHaveBeenCalledWith(docks.body, false);
   expect(right.querySelectorAll('[role=tab]')).toHaveLength(1);
+  expect(right.querySelector('[data-terminal-id=pty-1] [role=tab]')?.textContent).toContain('powershell');
   right.querySelector<HTMLButtonElement>('.work-dock-quick[data-view=terminal]')!.click();
   expect(rightShow).toHaveBeenCalledTimes(2);
   right.querySelector<HTMLElement>('.work-dock-add summary')!.click();
   right.querySelector<HTMLButtonElement>('.work-dock-menu-item[data-view=terminal]')!.click();
-  expect(rightNewTab).toHaveBeenCalledOnce(); expect(bottom.hidden).toBe(true);
+  expect(rightNewTab).toHaveBeenCalledTimes(2); expect(bottom.hidden).toBe(true);
+  expect(right.querySelectorAll('[role=tab]')).toHaveLength(2);
+  right.querySelector<HTMLButtonElement>('[data-terminal-id=pty-2] .btn:last-child')!.click();
+  expect(rightCloseTab).toHaveBeenCalledWith('pty-2');
+  expect(right.querySelectorAll('[role=tab]')).toHaveLength(1);
+  document.getElementById('rightDockToggle')!.click(); expect(rightHide).toHaveBeenCalled();
+  document.getElementById('rightDockToggle')!.click(); expect(rightSelectTab).toHaveBeenLastCalledWith('pty-1');
   document.getElementById('terminalToggle')!.click(); expect(bottom.hidden).toBe(false);
   expect(bottomShow).toHaveBeenCalledWith(docks.bottomBody, true);
   document.getElementById('terminalToggle')!.click(); expect(bottom.hidden).toBe(true); expect(bottomHide).toHaveBeenCalledOnce();
   expect(bottom.querySelector('.work-dock-bar, .work-dock-launch')).toBeNull();
+  right.querySelector<HTMLButtonElement>('[data-terminal-id=pty-1] .btn:last-child')!.click();
+  expect(rightCloseTab).toHaveBeenLastCalledWith('pty-1');
+  expect(right.querySelector<HTMLElement>('.work-dock-bar')!.hidden).toBe(true);
+  expect(right.querySelector<HTMLElement>('.work-dock-empty')!.hidden).toBe(false);
+  expect(rightHide).toHaveBeenCalled();
+});
+
+it('interleaves individual terminal sessions with tools and keeps one selected dock tab', () => {
+  const { docks } = setup();
+  const terminalTabs: { id: string; title: string; exited: boolean }[] = [];
+  const closeTerminal = vi.fn((id: string) => terminalTabs.splice(terminalTabs.findIndex(tab => tab.id === id), 1));
+  const selectTerminal = vi.fn(), showFiles = vi.fn(), hideFiles = vi.fn();
+  docks.registerTerminal({ show: vi.fn(), hide: vi.fn(), canCreate: () => true,
+    newTab: () => { const id = `pty-${terminalTabs.length + 1}`; terminalTabs.push({ id, title: `Shell ${id}`, exited: false }); return id; },
+    tabs: () => terminalTabs, selectTab: selectTerminal, closeTab: closeTerminal },
+    { show: vi.fn(), hide: vi.fn() });
+  docks.register('files', 'Files', 'i-folder', showFiles, hideFiles, () => true);
+  const right = document.getElementById('workDockRight')!;
+  docks.activate('terminal'); docks.activate('files');
+  right.querySelector<HTMLButtonElement>('.work-dock-menu-item[data-view=terminal]')!.click();
+  expect([...right.querySelectorAll<HTMLElement>('.work-dock-tab')].map(tab => tab.dataset.terminalId ?? 'files'))
+    .toEqual(['pty-1', 'files', 'pty-2']);
+  expect(right.querySelectorAll('[role=tab][aria-selected=true]')).toHaveLength(1);
+  right.querySelector<HTMLButtonElement>('[data-terminal-id=pty-1] [role=tab]')!.click();
+  expect(selectTerminal).toHaveBeenLastCalledWith('pty-1');
+  right.querySelector<HTMLButtonElement>('[data-terminal-id=pty-1] [role=tab]')!.focus();
+  terminalTabs[0]!.title = 'Renamed shell'; terminalTabs[0]!.exited = true; docks.sync();
+  expect(right.querySelector('[data-terminal-id=pty-1]')?.textContent).toContain('Renamed shell');
+  expect(document.activeElement).toBe(right.querySelector('[data-terminal-id=pty-1] [role=tab]'));
+  right.querySelector<HTMLButtonElement>('[data-terminal-id=pty-1] .btn:last-child')!.click();
+  expect(closeTerminal).toHaveBeenCalledWith('pty-1');
+  expect(right.querySelectorAll('[role=tab]')).toHaveLength(2);
+  expect(right.querySelector('.work-dock-tab:not([data-terminal-id])')).not.toBeNull();
 });
 
 it('hides the old right view when a recorded edit directly adopts Review', () => {
@@ -100,8 +148,11 @@ it('keeps Ctrl+backtick for bottom visibility and Ctrl+Shift+1–4 for scoped ac
   const { docks } = setup();
   const review = vi.fn(), files = vi.fn(), agents = vi.fn(), rightTerminal = vi.fn(), bottomTerminal = vi.fn();
   docks.register('review', 'Review', 'i-git-diff', review, vi.fn(), () => true);
-  docks.registerTerminal({ show: rightTerminal, hide: vi.fn(), canCreate: () => true, newTab: vi.fn() },
-    { show: bottomTerminal, hide: vi.fn(), canCreate: () => true, newTab: vi.fn() });
+  const terminalTabs: { id: string; title: string; exited: boolean }[] = [];
+  docks.registerTerminal({ show: rightTerminal, hide: vi.fn(), canCreate: () => true,
+    newTab: () => { terminalTabs.push({ id: 'pty-1', title: 'powershell', exited: false }); return 'pty-1'; },
+    tabs: () => terminalTabs, selectTab: vi.fn(), closeTab: vi.fn() },
+    { show: bottomTerminal, hide: vi.fn() });
   docks.register('files', 'Files', 'i-folder', files, vi.fn(), () => true);
   docks.register('agents', 'Sub-agents', 'i-agents', agents, vi.fn(), () => true);
   const key = (value: string, shiftKey = false) => document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: value, ctrlKey: true, shiftKey, bubbles: true }));

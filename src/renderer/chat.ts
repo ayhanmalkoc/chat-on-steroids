@@ -4174,7 +4174,7 @@ export function initChat(next: Deps): void {
     { onEmpty: () => docks.setBottomOpen(false), onClosePanel: () => docks.setBottomOpen(false) });
   workspaceTerminal.update(selectedLocalProject());
   rightWorkspaceTerminal = createWorkspaceTerminal(() => docks.toggleBottomTerminal(), docks.body,
-    { id: 'workspaceTerminalRight' });
+    { id: 'workspaceTerminalRight', dockedTabs: true, onTabsChanged: () => docks.sync() });
   rightWorkspaceTerminal.update(selectedLocalProject());
   docks.register('review', 'Review', 'i-git-diff', mount => {
     reviewPanel?.mountAt(mount); void reviewPanel?.show();
@@ -4182,11 +4182,12 @@ export function initChat(next: Deps): void {
   docks.registerTerminal({
     show: (mount, createIfEmpty) => rightWorkspaceTerminal?.show(mount, createIfEmpty),
     hide: () => rightWorkspaceTerminal?.hide(), canCreate: () => true,
-    newTab: () => rightWorkspaceTerminal?.newTab()
+    newTab: () => rightWorkspaceTerminal?.newTab() ?? null,
+    tabs: () => rightWorkspaceTerminal?.tabs() ?? [],
+    selectTab: id => rightWorkspaceTerminal?.selectTab(id), closeTab: id => rightWorkspaceTerminal?.closeTab(id)
   }, {
     show: (mount, createIfEmpty) => workspaceTerminal?.show(mount, createIfEmpty),
-    hide: () => workspaceTerminal?.hide(), canCreate: () => true,
-    newTab: () => workspaceTerminal?.newTab()
+    hide: () => workspaceTerminal?.hide()
   });
   docks.register('files', 'Files', 'i-folder', mount => {
     filePanel?.mountAt(mount); void filePanel?.show();

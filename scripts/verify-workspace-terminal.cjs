@@ -49,12 +49,13 @@ app.whenReady().then(async () => {
     const bottomTerminal=createWorkspaceTerminal(()=>docks.toggleBottomTerminal(),docks.bottomBody,
       {onEmpty:()=>docks.setBottomOpen(false),onClosePanel:()=>docks.setBottomOpen(false)});
     const rightTerminal=createWorkspaceTerminal(()=>docks.toggleBottomTerminal(),docks.body,
-      {id:'workspaceTerminalRight'});
+      {id:'workspaceTerminalRight',dockedTabs:true,onTabsChanged:()=>docks.sync()});
     bottomTerminal.update(${JSON.stringify(project)});rightTerminal.update(${JSON.stringify(project)});
     window.setTerminalProject=value=>bottomTerminal.update(value);
     docks.registerTerminal(
-      {show:(mount,createIfEmpty)=>rightTerminal.show(mount,createIfEmpty),hide:()=>rightTerminal.hide(),canCreate:()=>true,newTab:()=>rightTerminal.newTab()},
-      {show:(mount,createIfEmpty)=>bottomTerminal.show(mount,createIfEmpty),hide:()=>bottomTerminal.hide(),canCreate:()=>true,newTab:()=>bottomTerminal.newTab()});
+      {show:(mount,createIfEmpty)=>rightTerminal.show(mount,createIfEmpty),hide:()=>rightTerminal.hide(),canCreate:()=>true,
+       newTab:()=>rightTerminal.newTab(),tabs:()=>rightTerminal.tabs(),selectTab:id=>rightTerminal.selectTab(id),closeTab:id=>rightTerminal.closeTab(id)},
+      {show:(mount,createIfEmpty)=>bottomTerminal.show(mount,createIfEmpty),hide:()=>bottomTerminal.hide()});
     window.docks=docks;
     const proto=crypto.randomUUID.bind(crypto);crypto.randomUUID=()=>{const id=proto();window.ids.push(id);return id;};
     window.ready=true;`;
@@ -109,19 +110,28 @@ app.whenReady().then(async () => {
     await js("document.getElementById('rightDockToggle').click()");
     assert.equal(await js("document.querySelector('#workDockRight .work-dock-bar').hidden && !document.querySelector('#workDockRight .work-dock-empty').hidden"), true);
     await click('#workDockRight .work-dock-quick[data-view=terminal]');
-    await until('ids.length===3 && document.querySelector("#workspaceTerminalRight .terminal-tab").textContent.includes("powershell")');
+    await until('ids.length===3 && document.querySelector("#workDockRight .work-dock-tab[data-terminal-id]").textContent.includes("powershell")');
     assert.equal(await js("document.querySelectorAll('#workDockRight [role=tab]').length"), 1);
-    assert.equal(await js("document.querySelector('#workDockRight [role=tab]').textContent.includes('Terminal')"), true);
+    assert.equal(await js("document.querySelector('#workspaceTerminalRight .terminal-bar') === null"), true);
     assert.equal(await js('document.getElementById("workDockBottom").hidden'), true);
     await js(`window.api.terminalWrite(${JSON.stringify(first)}, "Write-Output ('BOTTOM_'+$proof)\\r")`);
     await until(`outputs[${JSON.stringify(first)}]?.includes('BOTTOM_persisted')`);
     const second = await js('ids[2]');
+    await js("document.getElementById('rightDockToggle').click()");
+    assert.equal(await js('document.getElementById("workDockRight").hidden'), true);
+    await js(`window.api.terminalWrite(${JSON.stringify(second)}, "Write-Output RIGHT_HIDDEN_OK\\r")`);
+    await until(`outputs[${JSON.stringify(second)}]?.includes('RIGHT_HIDDEN_OK')`);
+    await js("document.getElementById('rightDockToggle').click()");
+    assert.equal(await js('ids.length===3 && !document.getElementById("workDockRight").hidden && document.querySelectorAll("#workDockRight .work-dock-tab[data-terminal-id]").length===1'), true);
     await js("document.querySelector('#workDockRight .work-dock-add summary').click()");
     const rightClick = await click('#workDockRight .work-dock-menu-item[data-view=terminal]');
     assert.ok(rightClick.target.includes('work-dock-menu-item'), JSON.stringify(rightClick));
-    await until('ids.length===4 && document.querySelectorAll("#workspaceTerminalRight .terminal-tab").length===2');
-    await js("document.querySelector('#workspaceTerminalRight .terminal-tab:last-child .btn-icon').click()");
-    await until('document.querySelectorAll("#workspaceTerminalRight .terminal-tab").length===1');
+    await until('ids.length===4 && document.querySelectorAll("#workDockRight .work-dock-tab[data-terminal-id]").length===2');
+    const extraRight = await js('ids[3]');
+    await js("document.querySelector('#workDockRight .work-dock-tab[data-terminal-id]:last-child .btn-icon').click()");
+    await until('document.querySelectorAll("#workDockRight .work-dock-tab[data-terminal-id]").length===1');
+    assert.equal(await js('!document.getElementById("workDockRight").hidden && document.querySelector("#workDockRight .work-dock-tab[data-terminal-id] [aria-selected=true]") !== null'), true);
+    assert.equal((await js(`window.api.terminalWrite(${JSON.stringify(extraRight)}, 'echo closed\\r')`)).ok, false);
     await js("document.getElementById('terminalToggle').click()");
     await until('!document.getElementById("workspaceTerminal").hidden');
     // Update both the selected and hidden terminal without recreating either shell.
@@ -144,12 +154,14 @@ app.whenReady().then(async () => {
     assert.ok(geometry.fits, JSON.stringify(geometry));
     fs.writeFileSync(path.join(output, 'terminal.png'), (await win.webContents.capturePage(undefined, { stayHidden: true, stayAwake: true })).toPNG());
     await js(`window.api.terminalWrite(${JSON.stringify(second)}, "exit 7\\r")`); await until(`exits[${JSON.stringify(second)}]===7`);
-    await js("document.querySelector('#workspaceTerminalRight .terminal-tab .btn-icon').click()");
+    await js("document.querySelector('#workDockRight .work-dock-tab[data-terminal-id] .btn-icon').click()");
+    assert.equal((await js(`window.api.terminalWrite(${JSON.stringify(second)}, 'echo closed\\r')`)).ok, false);
+    assert.equal(await js("document.querySelector('#workDockRight .work-dock-bar').hidden && !document.querySelector('#workDockRight .work-dock-empty').hidden && document.getElementById('workspaceTerminalRight').hidden"), true);
     await js("document.querySelector('#workspaceTerminal .terminal-tab .btn-icon').click()");
     await until('document.getElementById("workDockBottom").hidden');
     assert.equal((await js(`window.api.terminalWrite(${JSON.stringify(first)}, 'echo nope\\r')`)).ok, false);
     assert.deepEqual(await js('errors'), []);
-    const result = { actualPty: true, projectCwd: true, projectlessHomeCwd: true, persistentEnvironmentAndCd: true, keyboardInput: true, hiddenPanelContinuity: true, bottomPanelClose: true, bottomMenuVisible: true, rightMenuClickable: true, rightAndBottomIndependent: true, lastBottomTabClosesPanel: true, multipleTabs: true, ctrlC: true, exitCode: 7, closeRetiresShell: true, geometry };
+    const result = { actualPty: true, projectCwd: true, projectlessHomeCwd: true, singleRightTabRow: true, rightTabClosesPty: true, rightPanelHidePreservesPty: true, persistentEnvironmentAndCd: true, keyboardInput: true, hiddenPanelContinuity: true, bottomPanelClose: true, bottomMenuVisible: true, rightMenuClickable: true, rightAndBottomIndependent: true, lastBottomTabClosesPanel: true, multipleTabs: true, ctrlC: true, exitCode: 7, closeRetiresShell: true, geometry };
     fs.writeFileSync(path.join(output, 'results.json'), JSON.stringify(result, null, 2)); console.log(JSON.stringify(result));
   } finally { win.destroy(); win = null; await server.close(); await backend.flushDurable(); }
   app.exit(0);

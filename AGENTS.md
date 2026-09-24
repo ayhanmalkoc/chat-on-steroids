@@ -764,8 +764,11 @@ Ctrl+backtick toggle its dock; its first opening shows Terminal and starts a she
 project is selected, main chooses the OS user's home directory as the initial cwd; the renderer
 does not supply a path. Selecting a project later does not retarget that shell. The bottom
 header's X hides the dock but preserves its shells.
-The bottom `+` menu opens another bottom shell, while the right Terminal action opens a right
-tool tab. Hiding either dock never restarts its PTYs; closing the last bottom terminal tab
+The bottom `+` menu opens another bottom shell. On the right, each shell is one dock tab
+alongside Files, Review and Sub-agents; there is no nested Terminal tab bar. The right
+`+` menu creates a new shell tab, while the Terminal quick action/shortcut selects an
+existing right shell or creates one if none exists. Closing a right shell tab retires that
+exact PTY; hiding either dock preserves its PTYs. Closing the last bottom terminal tab
 also closes the bottom dock.
 Each new terminal tab captures the selected approved project's canonical cwd, or the main-owned
 home cwd when projectless; changing chats does not retarget existing shells. A selected project

@@ -4,18 +4,24 @@ import { attachWorkPanelResize } from './work-panel-resize.js';
 
 export type DockView = 'review' | 'files' | 'agents' | 'terminal';
 type AdoptableView = Exclude<DockView, 'terminal'>;
+type DockTab = AdoptableView | `terminal:${string}`;
 type View = { label: string; glyph: string; available: () => boolean;
   show: (mount: HTMLElement) => void; hide: () => void };
 type TerminalView = { show: (mount: HTMLElement, createIfEmpty: boolean) => void;
-  hide: () => void; canCreate: () => boolean; newTab: () => void };
+  hide: () => void; canCreate: () => boolean; newTab: () => string | null;
+  tabs: () => { id: string; title: string; exited: boolean }[];
+  selectTab: (id: string) => void; closeTab: (id: string) => void };
+type BottomTerminalView = Pick<TerminalView, 'show' | 'hide'>;
 
 /** The right dock owns tool selection; the bottom dock owns its own terminal view. */
 export function createWorkspaceDocks(host: HTMLElement) {
   const app = document.querySelector<HTMLElement>('.app')!;
-  const views = new Map<DockView, View>();
-  let rightTerminal: TerminalView | null = null, bottomTerminal: TerminalView | null = null;
+  const views = new Map<AdoptableView, View>();
+  let rightTerminal: TerminalView | null = null, bottomTerminal: BottomTerminalView | null = null;
   let rightOpen = false, bottomOpen = false, expanded = false;
-  let opened: DockView[] = [], active: DockView | null = null, tabSignature = '';
+  let opened: DockTab[] = [], active: DockTab | null = null, tabSignature = '';
+  const terminalId = (key: DockTab): string | null => key.startsWith('terminal:') ? key.slice('terminal:'.length) : null;
+  const terminalKey = (id: string): DockTab => `terminal:${id}`;
   const iconButton = (glyph: string, label: string): HTMLButtonElement => {
     const button = el('button', 'btn btn-icon') as HTMLButtonElement;
     button.type = 'button'; button.append(icon(glyph));
@@ -87,15 +93,27 @@ export function createWorkspaceDocks(host: HTMLElement) {
   window.addEventListener('resize', () => setHeight(bottom.offsetHeight || saved));
   const bottomBody = el('div', 'work-dock-body'); bottom.append(resize, bottomBody); app.append(bottom);
 
+  const available = (key: DockTab): boolean => {
+    const id = terminalId(key);
+    return id ? rightTerminal?.tabs().some(tab => tab.id === id) ?? false : views.get(key as AdoptableView)?.available() ?? false;
+  };
+  const hideView = (key: DockTab): void => {
+    if (terminalId(key)) rightTerminal?.hide(); else views.get(key as AdoptableView)?.hide();
+  };
+  const showView = (key: DockTab): void => {
+    const id = terminalId(key);
+    if (id) { rightTerminal?.selectTab(id); rightTerminal?.show(body, false); }
+    else views.get(key as AdoptableView)?.show(body);
+  };
   const refreshControls = (): void => {
     for (const kind of ['review', 'terminal', 'files', 'agents'] as DockView[]) {
-      const available = views.get(kind)?.available() ?? false;
-      menu.querySelector<HTMLButtonElement>(`[data-view="${kind}"]`)?.toggleAttribute('disabled', !available);
-      launch.querySelector<HTMLButtonElement>(`[data-view="${kind}"]`)?.toggleAttribute('disabled', !available);
+      const enabled = kind === 'terminal' ? rightTerminal?.canCreate() ?? false : views.get(kind)?.available() ?? false;
+      menu.querySelector<HTMLButtonElement>(`[data-view="${kind}"]`)?.toggleAttribute('disabled', !enabled);
+      launch.querySelector<HTMLButtonElement>(`[data-view="${kind}"]`)?.toggleAttribute('disabled', !enabled);
     }
   };
   const paint = (): void => {
-    if (active && !views.get(active)?.available()) { views.get(active)?.hide(); active = null; }
+    if (active && !available(active)) { hideView(active); active = null; }
     right.hidden = !rightOpen;
     rightToggle.setAttribute('aria-expanded', String(rightOpen)); rightToggle.classList.toggle('is-active', rightOpen);
     expandToggle.hidden = !rightOpen;
@@ -108,23 +126,35 @@ export function createWorkspaceDocks(host: HTMLElement) {
     empty.hidden = active !== null;
     bar.hidden = opened.length === 0;
     if (bar.hidden) add.open = false;
-    const signature = `${opened.join(',')}|${active ?? ''}`;
+    const terminalTabs = rightTerminal?.tabs() ?? [];
+    const signature = `${opened.join(',')}|${active ?? ''}|${terminalTabs.map(tab => `${tab.id}:${tab.title}:${tab.exited}`).join(',')}`;
     if (signature !== tabSignature) {
+      const focused = (document.activeElement as HTMLElement | null)?.closest<HTMLElement>('.work-dock-tab');
+      const focusedKey = focused && tabs.contains(focused) ? focused.dataset.key : null;
+      const focusedClose = focusedKey && (document.activeElement as HTMLElement).classList.contains('btn-icon');
       tabSignature = signature; tabs.replaceChildren();
-      for (const kind of opened) {
-        const view = views.get(kind); if (!view) continue;
-        const tab = el('div', `work-dock-tab${active === kind ? ' is-selected' : ''}`);
-        const pick = el('button', 'btn', () => t(view.label)) as HTMLButtonElement;
-        pick.type = 'button'; pick.setAttribute('role', 'tab'); pick.append(icon(view.glyph));
-        pick.setAttribute('aria-selected', String(active === kind)); pick.tabIndex = active === kind ? 0 : -1;
-        pick.addEventListener('click', () => activate(kind));
-        const remove = iconButton('i-x', 'Close tab');
+      for (const key of opened) {
+        const id = terminalId(key), terminal = id ? terminalTabs.find(entry => entry.id === id) : null;
+        const view = id ? null : views.get(key as AdoptableView);
+        if (!terminal && !view) continue;
+        const tab = el('div', `work-dock-tab${active === key ? ' is-selected' : ''}`);
+        tab.dataset.key = key;
+        if (id) tab.dataset.terminalId = id;
+        const pick = el('button', 'btn', () => terminal
+          ? `${terminal.title}${terminal.exited ? ` · ${t('exited')}` : ''}` : t(view!.label)) as HTMLButtonElement;
+        pick.type = 'button'; pick.setAttribute('role', 'tab'); pick.prepend(icon(id ? 'i-terminal' : view!.glyph));
+        if (terminal) pick.title = terminal.title;
+        pick.setAttribute('aria-selected', String(active === key)); pick.tabIndex = active === key ? 0 : -1;
+        pick.addEventListener('click', () => activateKey(key));
+        const remove = iconButton('i-x', id ? 'Close terminal' : 'Close tab');
         remove.addEventListener('click', () => {
-          view.hide(); opened = opened.filter(entry => entry !== kind);
-          if (active === kind) {
+          if (id) { rightTerminal?.closeTab(id); if (active === key) rightTerminal?.hide(); }
+          else view?.hide();
+          opened = opened.filter(entry => entry !== key);
+          if (active === key) {
             active = null;
-            const previous = [...opened].reverse().find(entry => views.get(entry)?.available());
-            if (previous) activate(previous);
+            const previous = [...opened].reverse().find(available);
+            if (previous) activateKey(previous);
           }
           paint();
           (tabs.querySelector<HTMLButtonElement>('[aria-selected="true"]')
@@ -132,33 +162,48 @@ export function createWorkspaceDocks(host: HTMLElement) {
         });
         tab.append(pick, remove); tabs.append(tab);
       }
+      if (focusedKey) {
+        const replacement = [...tabs.children].find(node => (node as HTMLElement).dataset.key === focusedKey);
+        (replacement?.querySelector<HTMLButtonElement>(focusedClose ? '.btn:last-child' : '[role=tab]'))?.focus();
+      }
     }
     refreshControls();
   };
   const setRightOpen = (value: boolean): void => {
     if (rightOpen === value) { paint(); return; }
-    if (!value && active) views.get(active)?.hide();
+    if (!value && active) hideView(active);
     rightOpen = value; host.classList.toggle('has-work-dock', value);
     if (!value) { expanded = false; host.classList.remove('is-work-dock-expanded'); add.open = false; }
     paint();
-    if (value && active) views.get(active)?.show(body);
+    if (value && active) showView(active);
   };
   const setBottomOpen = (value: boolean, createIfEmpty = true): void => {
     if (bottomOpen === value) return;
     bottomOpen = value; app.classList.toggle('has-bottom-dock', value); paint();
     if (value) bottomTerminal?.show(bottomBody, createIfEmpty); else bottomTerminal?.hide();
   };
-  const activate = (kind: DockView): void => {
-    const view = views.get(kind); if (!view?.available()) return;
-    if (active && active !== kind) views.get(active)?.hide();
-    if (!opened.includes(kind)) opened.push(kind);
-    active = kind;
+  const activateKey = (key: DockTab): void => {
+    if (!available(key)) return;
+    if (active && active !== key) hideView(active);
+    if (!opened.includes(key)) opened.push(key);
+    active = key;
     if (!rightOpen) { rightOpen = true; host.classList.add('has-work-dock'); }
     paint();
-    view.show(body);
+    showView(key);
+  };
+  const newRightTerminal = (): void => {
+    if (!rightTerminal?.canCreate()) return;
+    const id = rightTerminal.newTab(); if (!id) return;
+    activateKey(terminalKey(id));
+  };
+  const activate = (kind: DockView): void => {
+    if (kind === 'terminal') {
+      const previous = [...opened].reverse().find(key => terminalId(key) !== null);
+      if (previous) activateKey(previous); else newRightTerminal();
+    } else activateKey(kind);
   };
   const adopt = (kind: AdoptableView): void => {
-    if (active && active !== kind) views.get(active)?.hide();
+    if (active && active !== kind) hideView(active);
     if (!opened.includes(kind)) opened.push(kind);
     active = kind; rightOpen = true; host.classList.add('has-work-dock'); paint();
   };
@@ -167,8 +212,7 @@ export function createWorkspaceDocks(host: HTMLElement) {
     item.type = 'button'; item.dataset.view = kind; item.prepend(icon(glyph));
     item.addEventListener('click', () => {
       add.open = false;
-      if (kind === 'terminal' && active === 'terminal' && rightOpen) rightTerminal?.newTab();
-      else activate(kind);
+      if (kind === 'terminal') newRightTerminal(); else activate(kind);
     }); menu.append(item);
     const quick = el('button', 'btn work-dock-quick') as HTMLButtonElement;
     quick.type = 'button'; quick.dataset.view = kind;
@@ -181,10 +225,8 @@ export function createWorkspaceDocks(host: HTMLElement) {
     show: (mount: HTMLElement) => void, hide: () => void, available: () => boolean): void => {
     views.set(kind, { label, glyph, show, hide, available }); addAction(kind, label, glyph); paint();
   };
-  const registerTerminal = (right: TerminalView, bottom: TerminalView): void => {
+  const registerTerminal = (right: TerminalView, bottom: BottomTerminalView): void => {
     rightTerminal = right; bottomTerminal = bottom;
-    views.set('terminal', { label: 'Terminal', glyph: 'i-terminal', available: right.canCreate,
-      show: mount => right.show(mount, true), hide: right.hide });
     addAction('terminal', 'Terminal', 'i-terminal'); paint();
   };
 
@@ -211,7 +253,7 @@ export function createWorkspaceDocks(host: HTMLElement) {
     const index = active ? opened.indexOf(active) : 0;
     const next = event.key === 'Home' ? 0 : event.key === 'End' ? opened.length - 1
       : (index + (event.key === 'ArrowRight' ? 1 : opened.length - 1)) % opened.length;
-    activate(opened[next]!); tabs.querySelector<HTMLButtonElement>('[aria-selected="true"]')?.focus();
+    activateKey(opened[next]!); tabs.querySelector<HTMLButtonElement>('[aria-selected="true"]')?.focus();
   });
   document.addEventListener('keydown', event => {
     if (!event.ctrlKey || event.altKey || event.metaKey) return;
