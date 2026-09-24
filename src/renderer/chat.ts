@@ -141,6 +141,7 @@ function projectGroup(id: string | null | undefined): string | null {
   return id && !projects.find(project => project.id === id)?.ungrouped ? id : null;
 }
 let workspaceTerminal: ReturnType<typeof createWorkspaceTerminal> | null = null;
+let rightWorkspaceTerminal: ReturnType<typeof createWorkspaceTerminal> | null = null;
 let workspaceDocks: ReturnType<typeof createWorkspaceDocks> | null = null;
 
 function selectedLocalProject(): LocalProject | null {
@@ -777,6 +778,7 @@ function paintSessions(): void {
   reviewPanel?.update(selectedLocalProject());
   workspaceDocks?.sync();
   workspaceTerminal?.update(selectedLocalProject());
+  rightWorkspaceTerminal?.update(selectedLocalProject());
   badgeKey = badgeSignature();
   $('projectsEmpty').hidden = projectSections.length > 0;
   $('sessionsEmpty').hidden = rows.length > 0;
@@ -4168,14 +4170,24 @@ export function initChat(next: Deps): void {
     onEscape: () => { docks.setOpen(false); docks.rightToggle.focus(); }
   });
   reviewPanel.update(selectedLocalProject());
-  workspaceTerminal = createWorkspaceTerminal(() => docks.toggleBottomTerminal(), docks.bottomBody);
+  workspaceTerminal = createWorkspaceTerminal(() => docks.toggleBottomTerminal(), docks.bottomBody,
+    { onEmpty: () => docks.setBottomOpen(false) });
   workspaceTerminal.update(selectedLocalProject());
+  rightWorkspaceTerminal = createWorkspaceTerminal(() => docks.toggleBottomTerminal(), docks.body,
+    { id: 'workspaceTerminalRight' });
+  rightWorkspaceTerminal.update(selectedLocalProject());
   docks.register('review', 'Review', 'i-git-diff', mount => {
     reviewPanel?.mountAt(mount); void reviewPanel?.show();
   }, () => reviewPanel?.hide(), () => selectedLocalProject() !== null);
-  docks.registerTerminal((mount, createIfEmpty) => workspaceTerminal?.show(mount, createIfEmpty),
-    () => workspaceTerminal?.hide(), () => selectedLocalProject() !== null,
-    () => workspaceTerminal?.newTab());
+  docks.registerTerminal({
+    show: (mount, createIfEmpty) => rightWorkspaceTerminal?.show(mount, createIfEmpty),
+    hide: () => rightWorkspaceTerminal?.hide(), canCreate: () => selectedLocalProject() !== null,
+    newTab: () => rightWorkspaceTerminal?.newTab()
+  }, {
+    show: (mount, createIfEmpty) => workspaceTerminal?.show(mount, createIfEmpty),
+    hide: () => workspaceTerminal?.hide(), canCreate: () => selectedLocalProject() !== null,
+    newTab: () => workspaceTerminal?.newTab()
+  });
   docks.register('files', 'Files', 'i-folder', mount => {
     filePanel?.mountAt(mount); void filePanel?.show();
   }, () => filePanel?.hide(), () => selectedLocalProject() !== null);

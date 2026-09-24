@@ -3,19 +3,19 @@ import { t, ui } from './i18n.js';
 import { attachWorkPanelResize } from './work-panel-resize.js';
 
 export type DockView = 'review' | 'files' | 'agents' | 'terminal';
-type RightView = Exclude<DockView, 'terminal'>;
+type AdoptableView = Exclude<DockView, 'terminal'>;
 type View = { label: string; glyph: string; available: () => boolean;
   show: (mount: HTMLElement) => void; hide: () => void };
 type TerminalView = { show: (mount: HTMLElement, createIfEmpty: boolean) => void;
   hide: () => void; canCreate: () => boolean; newTab: () => void };
 
-/** The right dock owns tool selection; the bottom dock owns only terminal visibility. */
+/** The right dock owns tool selection; the bottom dock owns its own terminal view. */
 export function createWorkspaceDocks(host: HTMLElement) {
   const app = document.querySelector<HTMLElement>('.app')!;
-  const views = new Map<RightView, View>();
-  let terminal: TerminalView | null = null;
+  const views = new Map<DockView, View>();
+  let rightTerminal: TerminalView | null = null, bottomTerminal: TerminalView | null = null;
   let rightOpen = false, bottomOpen = false, expanded = false;
-  let opened: RightView[] = [], active: RightView | null = null, tabSignature = '';
+  let opened: DockView[] = [], active: DockView | null = null, tabSignature = '';
   const iconButton = (glyph: string, label: string): HTMLButtonElement => {
     const button = el('button', 'btn btn-icon') as HTMLButtonElement;
     button.type = 'button'; button.append(icon(glyph));
@@ -26,11 +26,11 @@ export function createWorkspaceDocks(host: HTMLElement) {
   const bottomToggle = iconButton('i-panel-bottom', 'Toggle bottom panel (Ctrl+`)'); bottomToggle.id = 'terminalToggle';
   const rightToggle = iconButton('i-panel-right', 'Toggle right panel'); rightToggle.id = 'rightDockToggle';
   const expandToggle = el('button', 'btn btn-icon') as HTMLButtonElement;
-  expandToggle.id = 'rightDockExpand'; expandToggle.type = 'button'; expandToggle.append(icon('i-out'));
+  expandToggle.id = 'rightDockExpand'; expandToggle.type = 'button'; expandToggle.append(icon('i-dock-expand'));
   ui(expandToggle, 'title', () => t(expanded ? 'Restore right panel' : 'Expand right panel'));
   ui(expandToggle, 'aria-label', () => t(expanded ? 'Restore right panel' : 'Expand right panel'));
   expandToggle.hidden = true;
-  const controls = el('div', 'header-dock-controls'); controls.append(bottomToggle, rightToggle, expandToggle);
+  const controls = el('div', 'header-dock-controls'); controls.append(expandToggle, bottomToggle, rightToggle);
   document.getElementById('headerConnect')!.after(controls);
 
   const right = el('aside', 'work-dock work-dock-right'); right.id = 'workDockRight'; right.hidden = true;
@@ -45,9 +45,7 @@ export function createWorkspaceDocks(host: HTMLElement) {
   const launch = el('div', 'work-dock-launch');
   const empty = el('div', 'work-dock-empty'); empty.append(launch);
   const body = el('div', 'work-dock-body'); body.append(empty);
-  const closeRight = iconButton('i-x', 'Hide right panel');
-  closeRight.addEventListener('click', () => setRightOpen(false));
-  bar.append(tabs, add, closeRight); right.append(bar, body);
+  bar.append(tabs, add); right.append(bar, body);
   attachWorkPanelResize(host, right); host.append(right);
 
   const bottom = el('section', 'work-dock work-dock-bottom'); bottom.id = 'workDockBottom'; bottom.hidden = true;
@@ -91,7 +89,7 @@ export function createWorkspaceDocks(host: HTMLElement) {
 
   const refreshControls = (): void => {
     for (const kind of ['review', 'terminal', 'files', 'agents'] as DockView[]) {
-      const available = kind === 'terminal' ? (terminal?.canCreate() ?? false) : (views.get(kind)?.available() ?? false);
+      const available = views.get(kind)?.available() ?? false;
       menu.querySelector<HTMLButtonElement>(`[data-view="${kind}"]`)?.toggleAttribute('disabled', !available);
       launch.querySelector<HTMLButtonElement>(`[data-view="${kind}"]`)?.toggleAttribute('disabled', !available);
     }
@@ -104,6 +102,7 @@ export function createWorkspaceDocks(host: HTMLElement) {
     expandToggle.setAttribute('aria-pressed', String(expanded));
     expandToggle.title = t(expanded ? 'Restore right panel' : 'Expand right panel');
     expandToggle.setAttribute('aria-label', expandToggle.title);
+    expandToggle.querySelector('use')?.setAttribute('href', expanded ? '#i-dock-restore' : '#i-dock-expand');
     bottom.hidden = !bottomOpen;
     bottomToggle.setAttribute('aria-expanded', String(bottomOpen)); bottomToggle.classList.toggle('is-active', bottomOpen);
     empty.hidden = active !== null;
@@ -144,15 +143,9 @@ export function createWorkspaceDocks(host: HTMLElement) {
   const setBottomOpen = (value: boolean, createIfEmpty = true): void => {
     if (bottomOpen === value) return;
     bottomOpen = value; app.classList.toggle('has-bottom-dock', value); paint();
-    if (value) terminal?.show(bottomBody, createIfEmpty); else terminal?.hide();
-  };
-  const openNewTerminal = (): void => {
-    if (!terminal?.canCreate()) return;
-    setBottomOpen(true, false);
-    terminal.newTab();
+    if (value) bottomTerminal?.show(bottomBody, createIfEmpty); else bottomTerminal?.hide();
   };
   const activate = (kind: DockView): void => {
-    if (kind === 'terminal') { openNewTerminal(); return; }
     const view = views.get(kind); if (!view?.available()) return;
     if (active && active !== kind) views.get(active)?.hide();
     if (!opened.includes(kind)) opened.push(kind);
@@ -161,7 +154,7 @@ export function createWorkspaceDocks(host: HTMLElement) {
     paint();
     view.show(body);
   };
-  const adopt = (kind: RightView): void => {
+  const adopt = (kind: AdoptableView): void => {
     if (active && active !== kind) views.get(active)?.hide();
     if (!opened.includes(kind)) opened.push(kind);
     active = kind; rightOpen = true; host.classList.add('has-work-dock'); paint();
@@ -169,7 +162,11 @@ export function createWorkspaceDocks(host: HTMLElement) {
   const addAction = (kind: DockView, label: string, glyph: string): void => {
     const item = el('button', 'btn work-dock-menu-item', () => t(label)) as HTMLButtonElement;
     item.type = 'button'; item.dataset.view = kind; item.prepend(icon(glyph));
-    item.addEventListener('click', () => { add.open = false; activate(kind); }); menu.append(item);
+    item.addEventListener('click', () => {
+      add.open = false;
+      if (kind === 'terminal' && active === 'terminal' && rightOpen) rightTerminal?.newTab();
+      else activate(kind);
+    }); menu.append(item);
     const quick = el('button', 'btn work-dock-quick') as HTMLButtonElement;
     quick.type = 'button'; quick.dataset.view = kind;
     quick.append(icon(glyph), el('span', '', () => t(label)));
@@ -177,13 +174,15 @@ export function createWorkspaceDocks(host: HTMLElement) {
     quick.addEventListener('click', () => activate(kind)); launch.append(quick);
     refreshControls();
   };
-  const register = (kind: RightView, label: string, glyph: string,
+  const register = (kind: AdoptableView, label: string, glyph: string,
     show: (mount: HTMLElement) => void, hide: () => void, available: () => boolean): void => {
     views.set(kind, { label, glyph, show, hide, available }); addAction(kind, label, glyph); paint();
   };
-  const registerTerminal = (show: TerminalView['show'], hide: TerminalView['hide'],
-    canCreate: TerminalView['canCreate'], newTab: TerminalView['newTab']): void => {
-    terminal = { show, hide, canCreate, newTab }; addAction('terminal', 'Terminal', 'i-terminal'); paint();
+  const registerTerminal = (right: TerminalView, bottom: TerminalView): void => {
+    rightTerminal = right; bottomTerminal = bottom;
+    views.set('terminal', { label: 'Terminal', glyph: 'i-terminal', available: right.canCreate,
+      show: mount => right.show(mount, true), hide: right.hide });
+    addAction('terminal', 'Terminal', 'i-terminal'); paint();
   };
 
   rightToggle.addEventListener('click', () => setRightOpen(!rightOpen));

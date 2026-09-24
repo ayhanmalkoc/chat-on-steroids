@@ -8,10 +8,11 @@ import type { LocalProject } from '../shared/projects.js';
 
 type Tab = { id: string; projectId: string; title: string; node: HTMLElement; term: Terminal; fit: FitAddon; ready: boolean; exited: boolean; queued: number; writes: Promise<void> };
 
-/** A hidden panel retains its shells; tabs keep the project captured at creation. */
-export function createWorkspaceTerminal(onToggleBottom: () => void, initialMount: HTMLElement) {
+/** A hidden panel retains its shells; each dock owns only the tabs it created. */
+export function createWorkspaceTerminal(onToggleBottom: () => void, initialMount: HTMLElement,
+  options: { id?: string; onEmpty?: () => void } = {}) {
   const app = document.querySelector<HTMLElement>('.app')!;
-  const panel = el('section', 'workspace-terminal'); panel.id = 'workspaceTerminal'; panel.hidden = true;
+  const panel = el('section', 'workspace-terminal'); panel.id = options.id ?? 'workspaceTerminal'; panel.hidden = true;
   ui(panel, 'aria-label', () => t('Terminal'));
   const bar = el('div', 'terminal-bar'), tabsHost = el('div', 'terminal-tabs'), body = el('div', 'terminal-body');
   const button = (glyph: string, label: string): HTMLButtonElement => {
@@ -19,12 +20,12 @@ export function createWorkspaceTerminal(onToggleBottom: () => void, initialMount
     ui(node, 'title', () => t(label)); ui(node, 'aria-label', () => t(label)); return node;
   };
   const add = button('i-plus', 'New terminal');
-  add.id = 'terminalNew';
+  add.id = panel.id === 'workspaceTerminal' ? 'terminalNew' : `${panel.id}New`;
   const addMenu = el('details', 'work-dock-add') as HTMLDetailsElement;
   const addTrigger = el('summary'); addTrigger.append(icon('i-plus'));
   ui(addTrigger, 'title', () => t('New tab')); ui(addTrigger, 'aria-label', () => t('New tab'));
   const addChoices = el('div', 'work-dock-menu');
-  add.className = 'btn work-dock-menu-item';
+  add.className = 'btn work-dock-menu-item'; add.replaceChildren(icon('i-terminal'));
   add.append(el('span', '', () => t('Terminal')));
   addChoices.append(add); addMenu.append(addTrigger, addChoices);
   const empty = el('button', 'btn terminal-empty', () => t('Open a terminal in this project')) as HTMLButtonElement;
@@ -64,6 +65,7 @@ export function createWorkspaceTerminal(onToggleBottom: () => void, initialMount
         tabs.delete(tab.id); tab.term.dispose(); tab.node.remove(); void window.api.terminalClose(tab.id);
         if (selected === tab.id) selected = [...tabs.keys()].at(-1) ?? null;
         paint(); fit();
+        if (!tabs.size) options.onEmpty?.();
       });
       wrapper.append(pick, close); tabsHost.append(wrapper);
     }

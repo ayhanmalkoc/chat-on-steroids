@@ -61,3 +61,23 @@
   same two Windows UI Automation failures and PowerShell parser-recovery
   assertion; the broad run was stopped after those known failures. No
   full-suite pass is claimed. This follow-up was not packaged or installed.
+
+## Follow-up — terminal in both docks and tab-adjacent actions
+
+- Supersedes the previous bottom-only Terminal placement. Right Terminal opens a
+  right tool tab with its own PTYs; bottom Terminal keeps separate PTYs and opens
+  directly when its panel is shown. Bottom `+` creates another bottom tab, while
+  right `+` opens Terminal on the right. Closing the last bottom tab also hides
+  the bottom panel; toggling a panel still preserves any surviving processes.
+- Moved each `+` immediately after its tab strip instead of stretching the strip
+  across the header. Raised the terminal bar above its body so the bottom `+`
+  popover is clickable. Removed the redundant right-dock close button and put
+  the Codex-style expand/restore icon first in the top control group.
+- Checks on the feature branch: typecheck, five dock tests, 42 Files tests,
+  the exact recorded-edit timeline case and production build passed. The full
+  timeline file was stopped after prolonged high memory use without a result.
+  Isolated Electron workspace inspection and real PowerShell PTY acceptance passed,
+  including visible bottom menu, independent right/bottom shells, hidden-panel
+  continuity and last-tab close. One PTY fixture run returned exit code 1 after
+  all assertions; the immediate repeat completed with exit code 0. Final `dev`
+  merge, broader verification and package evidence are recorded separately.

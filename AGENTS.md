@@ -759,14 +759,16 @@ and nested code-mode calls do not receive or acknowledge these automatic pages.
 `workspace-terminal.ts` and `workspace-terminal-ipc.ts` own human-operated node-pty shells;
 `renderer/workspace-terminal.ts` renders them with xterm and FitAddon. These shells are separate
 from MCP process custody and never consume agent output. `renderer/workspace-docks.ts` places
-Terminal only in the bottom dock. The bottom header button and Ctrl+backtick toggle that dock;
-its first opening starts a shell when a project is selected. The right dock's Terminal shortcut
-and `+` menu create a new bottom terminal tab. Hiding the dock never restarts a PTY.
+independent Terminal views in the right and bottom docks. The bottom header button and
+Ctrl+backtick toggle its dock; its first opening starts a shell when a project is selected.
+The bottom `+` menu opens another bottom shell, while the right Terminal action opens a right
+tool tab. Hiding either dock never restarts its PTYs; closing the last bottom terminal tab
+also closes the bottom dock.
 Each new terminal tab captures the selected approved project's canonical cwd;
 changing chats does not retarget existing shells. No project means no guessed cwd. The live
 Command permission gates spawn/input, and input rechecks the original project path.
 
-Up to eight tabs retain interactive shell state. Hiding the panel preserves processes; closing
+Up to eight tabs across both docks retain interactive shell state. Hiding a panel preserves processes; closing
 a tab, renderer reload/destruction or app shutdown retires them. UUIDs and pending-create tickets
 prevent a late spawn after close. IPC accepts only the current main-frame sender and bounded
 named requests. Output pauses at 256 KiB until xterm parser acknowledgements drain it; scrollback
@@ -2842,15 +2844,17 @@ The Files panel projects the current session's LocalProject through fixed IPC us
 UUID and relative paths. It does not change the main composer or grant additional filesystem
 access. Main re-resolves current approved roots and rejects traversal, symbolic links/junctions
 and project-root mutation. The renderer's `workspace-docks.ts` owns the right tool dock and
-bottom terminal dock; Files, Review, Sub-agents and Terminal retain their own content and async
-lifetimes. Closing the right dock hides its active tool but retains its tab selection. Only the
-right dock has launcher shortcuts, tool tabs and a `+` tool menu. Its Files, Review and
-Sub-agents actions open right tabs; Terminal actions create a bottom terminal tab. The bottom
-dock has no generic shortcut screen or second tool tab strip; Terminal owns its own tabs there.
+bottom terminal dock; Files, Review, Sub-agents and each Terminal view retain their own content
+and async lifetimes. Closing the right dock hides its active tool but retains its tab selection.
+The right dock has launcher shortcuts, tool tabs and a `+` tool menu. Its Files, Review,
+Sub-agents and Terminal actions open right tabs; repeated Terminal `+` actions add a shell there.
+The bottom dock has no generic shortcut screen or second tool tab strip; Terminal owns its own
+tabs and `+` menu there. Both `+` controls follow the last tab, not the far edge of the bar.
 Hiding Files retires its watches without discarding an unsaved draft. Hiding the bottom dock
-does not retire its PTYs; closing a terminal tab does. The top-right control group orders
-bottom, right, then right expansion (shown only while right is open); the first two buttons
-toggle their panels. Layout controls grant no new file, terminal or worker authority.
+does not retire its PTYs; closing a terminal tab does. Closing the last bottom tab hides that
+dock. The top-right control group orders right expansion (shown only while right is open),
+bottom, then right; the latter two buttons toggle their panels. There is no separate right-dock
+close button. Layout controls grant no new file, terminal or worker authority.
 The sub-agent overview starts directly with Active and History, without a heading or close X.
 Its tab close or Escape closes the pane; a selected worker retains its title and Back button.
 Directories load one level at a time (500 entries); at most 128 expanded directory watches are

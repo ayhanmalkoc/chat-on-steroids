@@ -133,7 +133,9 @@ app.whenReady().then(async () => {
     assert.equal(await js('document.querySelector(".review-panel .file-change-row[data-path=\\"README.md\\"] .file-change-status").textContent'),'M');
     assert.ok(await js(`!document.querySelector('.review-panel .file-panel-toolbar button[title="New file"],.review-panel .file-panel-toolbar button[title="Delete"]')`));
     assert.deepEqual(await js(`[...document.querySelectorAll('.header-dock-controls > button')].map(button=>button.id)`),
-      ['terminalToggle','rightDockToggle','rightDockExpand']);
+      ['rightDockExpand','terminalToggle','rightDockToggle']);
+    assert.equal(await js(`document.querySelector('#workDockRight .work-dock-bar > .btn-icon')`),null);
+    assert.ok(await js(`(()=>{const tab=document.querySelector('#workDockRight .work-dock-tab:last-child').getBoundingClientRect();const plus=document.querySelector('#workDockRight .work-dock-add summary').getBoundingClientRect();return plus.left-tab.right<=12&&plus.left>=tab.right})()`));
     assert.equal(await js(`document.getElementById('rightDockExpand').hidden`),false);
     await js(`document.getElementById('rightDockExpand').click()`);
     assert.ok(await js(`document.querySelector('[data-panel=chat]').classList.contains('is-work-dock-expanded') && document.getElementById('workDockBottom').hidden`));
