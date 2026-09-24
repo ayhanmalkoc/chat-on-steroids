@@ -2840,11 +2840,11 @@ refresh complete or starts a browser action.
 The Files panel projects the current session's LocalProject through fixed IPC using a project
 UUID and relative paths. It does not change the main composer or grant additional filesystem
 access. Main re-resolves current approved roots and rejects traversal, symbolic links/junctions
-and project-root mutation. The renderer's `workspace-docks.ts` owns the right work slot,
-its tab strip, launcher and expansion; Files and the read-only sub-agent panel retain their
+and project-root mutation. The renderer's `workspace-docks.ts` owns both dock frames,
+their tab strips, launchers and right-panel expansion; Files, Review and Sub-agents retain their
 own content and async lifetimes. Closing the right dock hides its active tool but retains
-its tab selection. Files and Terminal are singleton renderer views movable between right and
-bottom docks; Sub-agents remains right-only. Moving Files retains its editor and unsaved draft;
+its tab selection. Files, Review and Terminal are singleton renderer views movable between
+right and bottom docks; Sub-agents remains right-only. Moving Files retains its editor and unsaved draft;
 hiding it retires file watches. Terminal may hold up to eight distinct PTYs in either location.
 The top-right pair toggles right and bottom workspaces; layout controls grant no new file,
 terminal or worker authority.
@@ -2854,13 +2854,15 @@ Directories load one level at a time (500 entries); at most 128 expanded directo
 retained. Collapse, panel hiding, renderer reload/destruction and root removal retire watchers.
 Files uses one action toolbar with Refresh; its tab close hides the panel. Its shared
 work slot can grow to host width minus 360 px for chat, without a fixed maximum pixel width.
-`src/main/project-git.ts` is the sole owner of the Files panel's Git projection. The renderer
+`src/main/project-git.ts` is the sole owner of the read-only Review projection. The renderer
 passes only a LocalProject UUID and project-relative path through fixed IPC; main re-resolves the
 approved project/root and Git metadata before reading status or a diff. Git inspection is strictly
 read-only: it strips inherited Git repository/index redirects, uses optional-lock-free bounded
 subprocesses and exposes no stage, commit, reset,
-checkout or push authority. The Changes view projects `M/A/D/R/U`, ancestor-folder markers and
-bounded unified diffs. A non-repository, binary file, oversized diff or truncated change set is an
+checkout or push authority. Review projects `M/A/D/R/U`, ancestor-folder markers and
+bounded unified diffs; Files may open it from its toolbar. Files and Review can remain visible
+in separate docks, while Review does not add a second file watcher or expose file-write actions.
+A non-repository, binary file, oversized diff or truncated change set is an
 explicit state rather than a reason to invent content or mutate the worktree.
 
 An exact successful `apply_patch` may also retain a bounded immutable before/after review asset

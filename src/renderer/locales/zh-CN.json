@@ -1437,5 +1437,6 @@
   "Changes ({0})": "更改 ({0})",
   "Diff": "差异",
   "Git changes in this folder: {0}": "此文件夹中的 Git 更改：{0}",
-  "Refresh changes": "刷新更改"
+  "Refresh changes": "刷新更改",
+  "Review": "审阅"
 }

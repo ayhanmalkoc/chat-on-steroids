@@ -9,6 +9,7 @@ export function createAgentPanel(options: {
   mount?: HTMLElement;
   toggle: HTMLButtonElement;
   onShow?: () => void;
+  onEscape?: () => void;
   load: (id: string) => Promise<{ events: SessionEvent[] } | null>;
   render: (events: SessionEvent[], id: string, current: () => boolean) => HTMLElement[];
   openMain: (id: string) => void;
@@ -71,7 +72,8 @@ export function createAgentPanel(options: {
   back.onclick = list;
   pane.addEventListener('keydown', event => {
     if (event.key !== 'Escape') return;
-    event.preventDefault(); hide(); options.toggle.focus();
+    event.preventDefault(); hide();
+    if (options.onEscape) options.onEscape(); else options.toggle.focus();
   });
   options.toggle.onclick = () => { if (pane.hidden) { show(); list(); } else hide(); };
   return {

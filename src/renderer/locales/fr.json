@@ -1494,5 +1494,6 @@
   "Changes ({0})": "Modifications ({0})",
   "Diff": "Diff",
   "Git changes in this folder: {0}": "Modifications Git dans ce dossier : {0}",
-  "Refresh changes": "Actualiser les modifications"
+  "Refresh changes": "Actualiser les modifications",
+  "Review": "Révision"
 }

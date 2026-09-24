@@ -347,6 +347,40 @@ it('reviews the exact edit independently of current Git changes and returns to F
   expect(document.activeElement).toBe(host.querySelector('.file-tree-root'));
 });
 
+it('shows Files and the read-only Review projection at once without a second file watcher', async () => {
+  const right = document.createElement('div'), bottom = document.createElement('div');
+  host.append(right, bottom);
+  const files = createFilePanel({ host, mount: right, toggle });
+  const reviewToggle = document.createElement('button');
+  const review = createFilePanel({ host, mount: bottom, toggle: reviewToggle, reviewOnly: true });
+  files.update(projectA); review.update(projectA);
+  await files.show(); await tick();
+  const fileWatchCalls = vi.mocked(window.api.watchProjectFiles).mock.calls.length;
+  await review.show(); await tick();
+  expect(right.querySelector<HTMLElement>('.file-tree')?.hidden).toBe(false);
+  expect(bottom.querySelector<HTMLElement>('.file-changes-view')?.hidden).toBe(false);
+  expect(bottom.querySelector('.file-panel-toolbar .file-panel-changes-toggle')).toBeNull();
+  expect(bottom.querySelector('.file-panel-toolbar .file-panel-action')).toBeNull();
+  expect(window.api.listProjectFiles).toHaveBeenCalledTimes(1);
+  expect(window.api.watchProjectFiles).toHaveBeenCalledTimes(fileWatchCalls);
+  expect(window.api.getProjectGitSnapshot).toHaveBeenCalled();
+});
+
+it('returns a recorded edit to Review rather than exposing Files actions', async () => {
+  (window.api as any).getToolEditReview = vi.fn(() => ok({
+    callId: 'call-id', changeIndex: 0, path: 'src/main.ts', added: 1, removed: 1,
+    baseText: 'before', currentText: 'after'
+  }));
+  const review = createFilePanel({ host, mount: host, toggle, reviewOnly: true });
+  review.update(projectA);
+  expect(await review.openReview(projectA.id, 'session-id', 'call-id', [0])).toBe(true);
+  host.querySelector<HTMLButtonElement>('.file-changes-back')!.click(); await tick();
+  expect(host.querySelector<HTMLElement>('.file-tree')?.hidden).toBe(true);
+  expect(host.querySelector<HTMLElement>('.file-changes-view')?.hidden).toBe(false);
+  expect(host.querySelector('.file-panel-toolbar .file-panel-action')).toBeNull();
+  expect(window.api.saveProjectFile).not.toHaveBeenCalled();
+});
+
 it('keeps tree focus through directory loading and supports arrow, parent and boundary navigation', async () => {
   const panel = createFilePanel({ host, toggle, onAttach: () => undefined });
   panel.update(projectA); toggle.click(); await tick();

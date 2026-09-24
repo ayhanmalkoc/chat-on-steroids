@@ -172,6 +172,7 @@ function replaceComposerDraft(): void { composerDraftGeneration++; skillPicker?.
 let pendingNewInput: { id: string; generation: number } | null = null;
 let agentPanel: ReturnType<typeof createAgentPanel> | null = null;
 let filePanel: ReturnType<typeof createFilePanel> | null = null;
+let reviewPanel: ReturnType<typeof createFilePanel> | null = null;
 const expandedWorkers = new Set<string>();
 const inputDrafts = new Map<string, string>();
 const newChatTasks = new Map<string, { objective: string; automation: string; loopDelivery: string }>();
@@ -773,6 +774,7 @@ function paintSessions(): void {
     ?.querySelector<HTMLElement>('.project-heading')?.focus({ preventScroll: true });
   agentPanel?.update(selectedId, sessions.filter(entry => entry.origin?.kind === 'worker' && entry.origin.fromSessionId === selectedId && selectedId !== null));
   filePanel?.update(selectedLocalProject());
+  reviewPanel?.update(selectedLocalProject());
   workspaceDocks?.sync();
   workspaceTerminal?.update(selectedLocalProject());
   badgeKey = badgeSignature();
@@ -1637,7 +1639,7 @@ function toolBody(event: Extract<SessionEvent, { kind: 'tool_call' }>, context?:
       click.preventDefault();
       click.stopPropagation();
       if (selectedId !== sessionId || selectedLocalProject()?.id !== project.id) return;
-      void filePanel?.openReview(project.id, sessionId, call.callId, reviewIndices).then(opened => {
+      void reviewPanel?.openReview(project.id, sessionId, call.callId, reviewIndices).then(opened => {
         if (!opened) toast(t('Recorded edit is unavailable.'));
       });
     });
@@ -3972,6 +3974,7 @@ export function initChat(next: Deps): void {
   agentPanel = createAgentPanel({
     host: chatHost, mount: docks.body, toggle: agentToggle,
     onShow: () => { if (docks.sideOf('files') === 'right') filePanel?.hide(); docks.adopt('agents'); },
+    onEscape: () => { docks.setOpen(false); docks.rightToggle.focus(); },
     load: id => run(api.getSession(id, { limit: 160 })), openMain: selectSession, working: sessionWorking,
     render: (source, id, current) => {
       let boundary = '';
@@ -4150,20 +4153,39 @@ export function initChat(next: Deps): void {
       if (docks.sideOf('files') !== 'bottom') agentPanel?.hide();
       docks.adopt('files', docks.sideOf('files') ?? 'right');
     },
+    onOpenChanges: () => docks.activate('review', docks.sideOf('files') ?? 'right'),
+    onEscape: () => {
+      if (docks.sideOf('files') === 'bottom') { docks.setBottomOpen(false); docks.bottomToggle.focus(); }
+      else { docks.setOpen(false); docks.rightToggle.focus(); }
+    },
     captureAttachment: () => {
       const owner = composerDraftOwner();
       return attachment => appendImages(owner, [attachment]);
     }
   });
   filePanel.update(selectedLocalProject());
+  const reviewToggle = el('button', 'btn') as HTMLButtonElement;
+  reviewToggle.hidden = true; reviewToggle.type = 'button'; chatHost.append(reviewToggle);
+  reviewPanel = createFilePanel({
+    host: chatHost, mount: docks.body, toggle: reviewToggle, reviewOnly: true,
+    onShow: () => docks.adopt('review', docks.sideOf('review') ?? 'right'),
+    onEscape: () => {
+      if (docks.sideOf('review') === 'bottom') { docks.setBottomOpen(false); docks.bottomToggle.focus(); }
+      else { docks.setOpen(false); docks.rightToggle.focus(); }
+    }
+  });
+  reviewPanel.update(selectedLocalProject());
+  workspaceTerminal = createWorkspaceTerminal(() => docks.toggleBottomTerminal(), docks.bottomBody);
+  workspaceTerminal.update(selectedLocalProject());
+  docks.register('review', 'Review', 'i-git-diff', (_side, mount) => {
+    reviewPanel?.mountAt(mount); void reviewPanel?.show();
+  }, () => reviewPanel?.hide(), () => !reviewToggle.hidden, ['right', 'bottom']);
+  docks.register('terminal', 'Terminal', 'i-terminal', (_side, mount) => workspaceTerminal?.show(mount),
+    () => workspaceTerminal?.hide(), () => selectedLocalProject() !== null || !!workspaceTerminal?.hasTabs(), ['right', 'bottom']);
   docks.register('files', 'Files', 'i-folder', (_side, mount) => {
     filePanel?.mountAt(mount); void filePanel?.show();
   }, () => filePanel?.hide(), () => !fileToggle.hidden, ['right', 'bottom']);
   docks.register('agents', 'Sub-agents', 'i-agents', () => agentPanel?.show(), () => agentPanel?.hide(), () => !agentToggle.hidden);
-  workspaceTerminal = createWorkspaceTerminal(() => docks.toggleBottomTerminal(), docks.bottomBody);
-  workspaceTerminal.update(selectedLocalProject());
-  docks.register('terminal', 'Terminal', 'i-terminal', (_side, mount) => workspaceTerminal?.show(mount),
-    () => workspaceTerminal?.hide(), () => selectedLocalProject() !== null || !!workspaceTerminal?.hasTabs(), ['right', 'bottom']);
   $('attachImages').addEventListener('click', async () => {
     const owner = composerDraftOwner();
     appendImages(owner, await run(api.chooseFiles()));

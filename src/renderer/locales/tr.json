@@ -1494,5 +1494,6 @@
   "Changes ({0})": "Değişiklikler ({0})",
   "Diff": "Fark",
   "Git changes in this folder: {0}": "Bu klasördeki Git değişiklikleri: {0}",
-  "Refresh changes": "Değişiklikleri yenile"
+  "Refresh changes": "Değişiklikleri yenile",
+  "Review": "İnceleme"
 }

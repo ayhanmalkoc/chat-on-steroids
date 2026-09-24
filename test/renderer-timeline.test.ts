@@ -7,7 +7,9 @@ import { prependUserPrompt } from '../src/shared/user-prompt.js';
 import type { Handoff, SessionEvent, SessionSummary } from '../src/shared/session.js';
 import type { InputArgs, InputEntry } from '../src/main/session/input.js';
 import type { LocalProject } from '../src/shared/projects.js';
-vi.mock('../src/renderer/workspace-terminal.js', () => ({ createWorkspaceTerminal: () => ({ update: vi.fn() }) }));
+vi.mock('../src/renderer/workspace-terminal.js', () => ({ createWorkspaceTerminal: () => ({
+  update: vi.fn(), show: vi.fn(), hide: vi.fn(), hasTabs: () => false
+}) }));
 vi.mock('../src/renderer/pet.js', () => ({ initPet: () => () => {} }));
 vi.mock('../src/renderer/file-code-editor.js', () => ({
   createProjectDiffViewer: async ({ parent, baseText, currentText }: { parent: HTMLElement; baseText: string; currentText: string }) => {
@@ -1633,8 +1635,8 @@ it('reviews only an exact recorded edit without expanding its tool row or queryi
   review.click(); await settle();
   expect(row.open).toBe(false);
   expect(reviewCall).toHaveBeenCalledWith(expect.any(String), edit.call.callId, 0);
-  expect(app.w.document.querySelector<HTMLElement>('.file-changes-view')?.hidden).toBe(false);
-  expect(app.w.document.querySelector('.file-preview-meta')?.textContent).toContain('This edit');
+  expect(app.w.document.querySelector<HTMLElement>('.review-panel .file-changes-view')?.hidden).toBe(false);
+  expect(app.w.document.querySelector('.review-panel .file-preview-meta')?.textContent).toContain('This edit');
 });
 
 it('does not offer a project diff shortcut in an unfiled chat', async () => {

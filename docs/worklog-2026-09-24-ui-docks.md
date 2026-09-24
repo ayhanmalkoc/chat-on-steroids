@@ -29,3 +29,18 @@
   The Electron fixture now compares the detached connection popover to the sidebar
   surface under a non-translucent test theme; the old assertion incorrectly equated
   sidebar and page background colors.
+
+## Part 3 — `feat/ui-dock-review`
+
+- Merged the existing read-only Git Changes commit as `088e4d8`, retaining its
+  original authored commit and contributor trail. Added Review as a separate
+  singleton dock view, available on the right or bottom alongside Files.
+- Review shows current bounded Git changes and exact recorded `apply_patch` edit
+  assets. It exposes no file-write toolbar or second file watcher. The Files
+  toolbar's Changes action opens Review; historical edit buttons target Review
+  and return to its list. No stage, commit, push, branch comparison or Ask agent.
+- Checks on the feature branch: typecheck, 135 focused Git/renderer/IPC tests,
+  the recorded-edit timeline case, and synthetic Electron Chromium inspection
+  passed. The Electron fixture exercises the independent Review tab, working
+  tree diff, return to Files, editor draft, PDF and responsive layouts. Final
+  `dev` and package evidence are recorded separately below.

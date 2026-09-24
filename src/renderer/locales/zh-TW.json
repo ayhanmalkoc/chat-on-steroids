@@ -1471,5 +1471,6 @@
   "Changes ({0})": "變更 ({0})",
   "Diff": "差異",
   "Git changes in this folder: {0}": "此資料夾中的 Git 變更：{0}",
-  "Refresh changes": "重新整理變更"
+  "Refresh changes": "重新整理變更",
+  "Review": "檢閱"
 }

@@ -15,6 +15,9 @@ interface FilePanelOptions {
   host: HTMLElement;
   mount?: HTMLElement;
   toggle: HTMLButtonElement;
+  reviewOnly?: boolean;
+  onOpenChanges?: () => void;
+  onEscape?: () => void;
   onShow?: () => void;
   onAttach?: (attachment: InputAttachment) => void;
   /** Capture the current composer owner before staging starts, including its draft epoch. */
@@ -229,8 +232,8 @@ function requestFileConfirmation(options: { title: string; message: string; deta
  * LocalProject id plus a project-relative path and main re-resolves the filesystem authority.
  */
 export function createFilePanel(options: FilePanelOptions) {
-  const pane = el('aside', 'file-panel'); pane.hidden = true;
-  ui(pane, 'aria-label', () => t('Files'));
+  const pane = el('aside', `file-panel${options.reviewOnly ? ' review-panel' : ''}`); pane.hidden = true;
+  ui(pane, 'aria-label', () => t(options.reviewOnly ? 'Review' : 'Files'));
   if (!options.mount) attachWorkPanelResize(options.host, pane);
 
   const refresh = el('button', 'btn btn-icon file-panel-refresh') as HTMLButtonElement;
@@ -243,13 +246,14 @@ export function createFilePanel(options: FilePanelOptions) {
   const rename = actionButton(() => t('Rename'), 'i-pencil', renameSelection);
   const remove = actionButton(() => t('Delete'), 'i-trash', deleteSelection);
   const reveal = actionButton(() => t('Reveal'), 'i-out', revealSelection);
-  const changes = actionButton(() => t('Changes'), 'i-git-diff', toggleChanges);
+  const changes = actionButton(() => t('Changes'), 'i-git-diff', () => options.onOpenChanges ? options.onOpenChanges() : toggleChanges());
   changes.classList.add('file-panel-changes-toggle');
   changes.setAttribute('aria-pressed', 'false');
   const changesBadge = el('span', 'file-panel-changes-badge');
   changesBadge.hidden = true;
   changes.append(changesBadge);
-  toolbar.append(newFile, newFolder, rename, remove, reveal, changes, refresh);
+  if (!options.reviewOnly) toolbar.append(newFile, newFolder, rename, remove, reveal, changes);
+  toolbar.append(refresh);
 
   const body = el('div', 'file-panel-body');
   const tree = el('div', 'file-tree'); tree.setAttribute('role', 'tree');
@@ -312,7 +316,7 @@ export function createFilePanel(options: FilePanelOptions) {
   let editorSaveButton: HTMLButtonElement | null = null;
   let editorDirtyBadge: HTMLElement | null = null;
   let saving = false;
-  let mode: 'files' | 'changes' | 'review' = 'files';
+  let mode: 'files' | 'changes' | 'review' = options.reviewOnly ? 'changes' : 'files';
   let reviewReturnMode: 'files' | 'changes' = 'files';
   let reviewSource: { sessionId: string; callId: string; indices: number[]; cursor: number } | null = null;
   let reviewValue: ToolEditReview | null = null;
@@ -1287,6 +1291,7 @@ export function createFilePanel(options: FilePanelOptions) {
   }
 
   function showFiles(): void {
+    if (options.reviewOnly) return;
     if (mode !== 'changes') return;
     mode = 'files';
     gitDiffGeneration++;
@@ -1337,6 +1342,7 @@ export function createFilePanel(options: FilePanelOptions) {
     changesList.hidden = showingDiff;
     ui(changesHeaderTitle, 'textContent', () => t(showingReview ? 'Review edit' : showingDiff ? 'Diff' : 'Working tree'));
     const backToChanges = showingReview ? reviewReturnMode === 'changes' : showingChanges && gitDiffPath !== null;
+    backToFiles.hidden = !!options.reviewOnly && showingChanges && !showingDiff;
     ui(backToFilesLabel, 'textContent', () => t(backToChanges ? 'Changes' : 'Files'));
     ui(backToFiles, 'aria-label', () => t(backToChanges ? 'Back to changes' : 'Back to files'));
     const refreshLabel = (): string => t(showingChanges ? 'Refresh changes' : 'Refresh files');
@@ -1391,6 +1397,7 @@ export function createFilePanel(options: FilePanelOptions) {
   }
 
   function syncWatches(): void {
+    if (options.reviewOnly) return;
     const current = pane.hidden ? null : project;
     const directories = current ? watchedDirectories() : [];
     const signature = current ? `${current.id}\0${directories.join('\0')}` : '<none>';
@@ -1570,10 +1577,11 @@ export function createFilePanel(options: FilePanelOptions) {
     }
     if (editingPath && event.key === 'Escape') return;
     if (event.key !== 'Escape') return;
-    event.preventDefault(); hide(); options.toggle.focus();
+    event.preventDefault(); hide();
+    if (options.onEscape) options.onEscape(); else options.toggle.focus();
   });
   options.toggle.onclick = () => { if (pane.hidden) void show(); else hide(); };
-  window.api.onProjectFilesChanged?.(change => { void handleWatchedChange(change); });
+  if (!options.reviewOnly) window.api.onProjectFilesChanged?.(change => { void handleWatchedChange(change); });
   window.api.onProjectGitChanged?.((change: ProjectGitChanged) => {
     if (change.projectId === project?.id) scheduleGitReconcile();
   });
@@ -1607,7 +1615,7 @@ export function createFilePanel(options: FilePanelOptions) {
       if (gitReconcileTimer !== null) window.clearTimeout(gitReconcileTimer);
       gitReconcileTimer = null;
       gitSnapshot = null; gitLoading = false; gitDiffPath = null; gitDiffValue = null;
-      reviewGeneration++; reviewSource = null; reviewValue = null; mode = 'files';
+      reviewGeneration++; reviewSource = null; reviewValue = null; mode = options.reviewOnly ? 'changes' : 'files';
       generation++;
       listings.clear(); expanded = new Set(['']); selection = { path: '', kind: 'root' };
       previewPath = null; previewValue = null;

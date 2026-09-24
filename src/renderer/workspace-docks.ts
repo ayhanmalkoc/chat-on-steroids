@@ -233,7 +233,7 @@ export function createWorkspaceDocks(host: HTMLElement) {
     if (bottom.open && bottom.active === 'terminal') setOpen('bottom', false);
     else activate('terminal', 'bottom');
   };
-  return { body: right.body, bottomBody: bottom.body, bottomToggle,
+  return { body: right.body, bottomBody: bottom.body, rightToggle, bottomToggle,
     register, activate, adopt, sideOf: (kind: DockView) => location.get(kind) ?? null,
     setOpen: (value: boolean) => setOpen('right', value), setBottomOpen: (value: boolean) => setOpen('bottom', value),
     toggleBottomTerminal,
