@@ -1,4 +1,4 @@
-// Isolated Electron + actual project-resolved PTY + current renderer. No provider or production state.
+// Isolated Electron + actual project/projectless PTYs + current renderer. No provider or production state.
 const { app, BrowserWindow } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -75,8 +75,15 @@ app.whenReady().then(async () => {
   try {
     await server.listen(); await win.loadURL(server.resolvedUrls.local[0] + 'fixture.html'); await until('window.ready');
     await js("window.setTerminalProject(null);document.getElementById('terminalToggle').click()");
-    assert.equal(await js("!document.getElementById('workspaceTerminal').hidden && !document.getElementById('workDockBottom').hidden && document.querySelector('#workspaceTerminal .terminal-empty').textContent.includes('Select a project') && ids.length===0"), true);
-    await js(`window.setTerminalProject(${JSON.stringify(project)})`);
+    await until('ids.length===1 && document.querySelector("#workspaceTerminal .terminal-tab").textContent.includes("powershell")');
+    const homeId = await js('ids[0]');
+    assert.equal(await js('document.querySelector("#workspaceTerminal .terminal-screen").title'), app.getPath('home'));
+    await js(`window.api.terminalWrite(${JSON.stringify(homeId)}, "Write-Output ('HOME_'+(Get-Location).Path)\\r")`);
+    await until(`outputs[${JSON.stringify(homeId)}]?.includes('HOME_')`);
+    await js("document.querySelector('#workspaceTerminal .terminal-tab .btn-icon').click()");
+    await until('document.getElementById("workDockBottom").hidden');
+    assert.equal((await js(`window.api.terminalWrite(${JSON.stringify(homeId)}, 'echo closed\\r')`)).ok, false);
+    await js(`window.setTerminalProject(${JSON.stringify(project)});window.ids=[];document.getElementById('terminalToggle').click()`);
     await until('ids.length===1 && document.querySelector(".terminal-tab").textContent.includes("powershell")');
     const first = await js('ids[0]');
     assert.equal(await js('!document.getElementById("workspaceTerminal").hidden && !document.getElementById("workDockBottom").hidden'), true);
@@ -142,7 +149,7 @@ app.whenReady().then(async () => {
     await until('document.getElementById("workDockBottom").hidden');
     assert.equal((await js(`window.api.terminalWrite(${JSON.stringify(first)}, 'echo nope\\r')`)).ok, false);
     assert.deepEqual(await js('errors'), []);
-    const result = { actualPty: true, projectCwd: true, lateProjectStartsTerminal: true, persistentEnvironmentAndCd: true, keyboardInput: true, hiddenPanelContinuity: true, bottomPanelClose: true, bottomMenuVisible: true, rightMenuClickable: true, rightAndBottomIndependent: true, lastBottomTabClosesPanel: true, multipleTabs: true, ctrlC: true, exitCode: 7, closeRetiresShell: true, geometry };
+    const result = { actualPty: true, projectCwd: true, projectlessHomeCwd: true, persistentEnvironmentAndCd: true, keyboardInput: true, hiddenPanelContinuity: true, bottomPanelClose: true, bottomMenuVisible: true, rightMenuClickable: true, rightAndBottomIndependent: true, lastBottomTabClosesPanel: true, multipleTabs: true, ctrlC: true, exitCode: 7, closeRetiresShell: true, geometry };
     fs.writeFileSync(path.join(output, 'results.json'), JSON.stringify(result, null, 2)); console.log(JSON.stringify(result));
   } finally { win.destroy(); win = null; await server.close(); await backend.flushDurable(); }
   app.exit(0);

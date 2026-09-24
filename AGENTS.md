@@ -760,16 +760,17 @@ and nested code-mode calls do not receive or acknowledge these automatic pages.
 `renderer/workspace-terminal.ts` renders them with xterm and FitAddon. These shells are separate
 from MCP process custody and never consume agent output. `renderer/workspace-docks.ts` places
 independent Terminal views in the right and bottom docks. The bottom header button and
-Ctrl+backtick toggle its dock; its first opening shows Terminal and starts a shell when a
-project is selected. If project selection arrives later while that empty Terminal is open,
-the shell starts then, without guessing a cwd. The bottom header's X hides the dock but
-preserves its shells.
+Ctrl+backtick toggle its dock; its first opening shows Terminal and starts a shell. When no
+project is selected, main chooses the OS user's home directory as the initial cwd; the renderer
+does not supply a path. Selecting a project later does not retarget that shell. The bottom
+header's X hides the dock but preserves its shells.
 The bottom `+` menu opens another bottom shell, while the right Terminal action opens a right
 tool tab. Hiding either dock never restarts its PTYs; closing the last bottom terminal tab
 also closes the bottom dock.
-Each new terminal tab captures the selected approved project's canonical cwd;
-changing chats does not retarget existing shells. No project means no guessed cwd. The live
-Command permission gates spawn/input, and input rechecks the original project path.
+Each new terminal tab captures the selected approved project's canonical cwd, or the main-owned
+home cwd when projectless; changing chats does not retarget existing shells. A selected project
+that fails resolution must not fall back to home. The live Command permission gates spawn/input,
+and input rechecks the original project path for project-bound tabs.
 
 Up to eight tabs across both docks retain interactive shell state. Hiding a panel preserves processes; closing
 a tab, renderer reload/destruction or app shutdown retires them. UUIDs and pending-create tickets

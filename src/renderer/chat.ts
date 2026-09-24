@@ -4181,11 +4181,11 @@ export function initChat(next: Deps): void {
   }, () => reviewPanel?.hide(), () => selectedLocalProject() !== null);
   docks.registerTerminal({
     show: (mount, createIfEmpty) => rightWorkspaceTerminal?.show(mount, createIfEmpty),
-    hide: () => rightWorkspaceTerminal?.hide(), canCreate: () => selectedLocalProject() !== null,
+    hide: () => rightWorkspaceTerminal?.hide(), canCreate: () => true,
     newTab: () => rightWorkspaceTerminal?.newTab()
   }, {
     show: (mount, createIfEmpty) => workspaceTerminal?.show(mount, createIfEmpty),
-    hide: () => workspaceTerminal?.hide(), canCreate: () => selectedLocalProject() !== null,
+    hide: () => workspaceTerminal?.hide(), canCreate: () => true,
     newTab: () => workspaceTerminal?.newTab()
   });
   docks.register('files', 'Files', 'i-folder', mount => {
