@@ -760,7 +760,10 @@ and nested code-mode calls do not receive or acknowledge these automatic pages.
 `renderer/workspace-terminal.ts` renders them with xterm and FitAddon. These shells are separate
 from MCP process custody and never consume agent output. `renderer/workspace-docks.ts` places
 independent Terminal views in the right and bottom docks. The bottom header button and
-Ctrl+backtick toggle its dock; its first opening starts a shell when a project is selected.
+Ctrl+backtick toggle its dock; its first opening shows Terminal and starts a shell when a
+project is selected. If project selection arrives later while that empty Terminal is open,
+the shell starts then, without guessing a cwd. The bottom header's X hides the dock but
+preserves its shells.
 The bottom `+` menu opens another bottom shell, while the right Terminal action opens a right
 tool tab. Hiding either dock never restarts its PTYs; closing the last bottom terminal tab
 also closes the bottom dock.
@@ -2848,6 +2851,8 @@ bottom terminal dock; Files, Review, Sub-agents and each Terminal view retain th
 and async lifetimes. Closing the right dock hides its active tool but retains its tab selection.
 The right dock has launcher shortcuts, tool tabs and a `+` tool menu. Its Files, Review,
 Sub-agents and Terminal actions open right tabs; repeated Terminal `+` actions add a shell there.
+With no tabs, the right dock shows only launcher shortcuts; its tab bar and `+` stay hidden.
+The `+` popover must receive real pointer input above any active tool header.
 The bottom dock has no generic shortcut screen or second tool tab strip; Terminal owns its own
 tabs and `+` menu there. Both `+` controls follow the last tab, not the far edge of the bar.
 Hiding Files retires its watches without discarding an unsaved draft. Hiding the bottom dock

@@ -81,3 +81,23 @@
   continuity and last-tab close. One PTY fixture run returned exit code 1 after
   all assertions; the immediate repeat completed with exit code 0. Final `dev`
   merge, broader verification and package evidence are recorded separately.
+
+## Follow-up — clickable right menu and terminal-first bottom panel
+
+- Reproduced the right `+` failure with an actual Electron pointer click: its
+  visible Terminal menu item hit the underlying Terminal tab because that tool's
+  header had a higher stacking order. Raised the right tab bar above the tool
+  header; the same pointer action now activates the menu item.
+- With no right tabs, hide the tab bar/`+` and leave the launcher shortcuts.
+  Bottom opening always shows the Terminal view, starts its shell when a selected
+  project is available (including if the project arrives after opening), and has
+  a right-aligned X that hides the panel without ending its process. The last
+  terminal tab's X still closes the shell and the bottom panel.
+- Feature-branch checks: dock/File Vitest 47/47, typecheck, build, isolated
+  Electron PowerShell PTY and full workspace renderer fixture passed. The Electron test
+  physically clicks right and bottom menus and the bottom X; it also exercises
+  delayed project selection and no-tab right layout. `npm run verify` passed
+  privacy, notices and typecheck but again reported the known Windows browser
+  UIA, Windows accessibility and MCP parser-recovery failures; the broad test
+  run was stopped after those failures, so no full-suite pass is claimed.
+  A packaged/install test was not run for this follow-up.

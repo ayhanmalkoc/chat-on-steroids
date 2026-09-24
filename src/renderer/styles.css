@@ -3460,6 +3460,7 @@ select option::checkmark { order: 1; margin-inline-start: auto; color: var(--ink
 .terminal-tab.is-selected { background: var(--hover); }
 .terminal-tab > .btn:first-child { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; padding: 5px 8px; }
 .terminal-bar .btn-icon { width: 26px; height: 26px; padding: 5px; }
+.terminal-panel-close { margin-left: auto; flex: none; }
 .terminal-body { flex: 1; min-height: 0; min-width: 0; position: relative; }
 .terminal-screen { position: absolute; inset: 0; padding: 6px 12px; background: var(--page); }
 .terminal-screen[hidden] { display: none; }
@@ -3470,7 +3471,7 @@ select option::checkmark { order: 1; margin-inline-start: auto; color: var(--ink
 /* One quiet frame for right-side tools; the tool owners keep their own content state. */
 [data-panel='chat'].has-work-dock { grid-template-columns: minmax(0, 1fr) var(--work-panel-width, minmax(340px, 42%)); }
 .work-dock-right { position: relative; grid-column: 2; min-width: 0; min-height: 0; display: flex; flex-direction: column; border-left: 1px solid var(--line); background: var(--page); }
-.work-dock-bar { position: relative; z-index: 9; display: flex; align-items: center; gap: 4px; flex: 0 0 38px; min-width: 0; padding: 4px 9px; border-bottom: 1px solid var(--line); }
+.work-dock-bar { position: relative; z-index: 11; display: flex; align-items: center; gap: 4px; flex: 0 0 38px; min-width: 0; padding: 4px 9px; border-bottom: 1px solid var(--line); }
 .work-dock-tabs { display: flex; align-items: center; flex: 0 1 auto; gap: 4px; min-width: 0; overflow-x: auto; }
 .work-dock-tab { display: flex; align-items: center; gap: 2px; flex: 0 0 auto; max-width: 180px; border-radius: 7px; }
 .work-dock-tab.is-selected { background: var(--hover); }

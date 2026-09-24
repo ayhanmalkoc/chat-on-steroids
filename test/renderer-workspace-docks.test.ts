@@ -22,6 +22,8 @@ it('orders expansion, bottom and right controls; toggles panels and shows expans
   expect(bottom.querySelector('.work-dock-empty, .work-dock-quick, .work-dock-add')).toBeNull();
   controls[1]!.click(); expect(bottom.hidden).toBe(true);
   controls[2]!.click(); expect(right.hidden).toBe(false);
+  expect(right.querySelector<HTMLElement>('.work-dock-bar')!.hidden).toBe(true);
+  expect(right.querySelector<HTMLElement>('.work-dock-empty')!.hidden).toBe(false);
   expect(controls[0]!.hidden).toBe(false);
   expect(controls[0]!.querySelector('use')?.getAttribute('href')).toBe('#i-dock-expand');
   expect(right.querySelector('.work-dock-bar > .btn-icon')).toBeNull();
@@ -46,6 +48,7 @@ it('enables right quick actions and plus-menu entries from live scope, then open
   document.getElementById('rightDockToggle')!.click();
   quick.click(); expect(files).toHaveBeenCalledOnce();
   const right = document.getElementById('workDockRight')!;
+  expect(right.querySelector<HTMLElement>('.work-dock-bar')!.hidden).toBe(false);
   expect(right.querySelectorAll('[role=tab]')).toHaveLength(1);
   expect(right.querySelector('.work-dock-tabs')?.nextElementSibling?.classList.contains('work-dock-add')).toBe(true);
   const selected = right.querySelector<HTMLButtonElement>('[role=tab]')!;
@@ -55,6 +58,9 @@ it('enables right quick actions and plus-menu entries from live scope, then open
   right.querySelector<HTMLElement>('.work-dock-add summary')!.click();
   menu.click(); expect(files).toHaveBeenCalledTimes(3);
   expect((right.querySelector('.work-dock-add') as HTMLDetailsElement).open).toBe(false);
+  right.querySelector<HTMLButtonElement>('.work-dock-tab .btn:last-child')!.click();
+  expect(right.querySelector<HTMLElement>('.work-dock-bar')!.hidden).toBe(true);
+  expect(document.activeElement).toBe(quick);
 });
 
 it('keeps right and bottom Terminal actions in their own dock', () => {

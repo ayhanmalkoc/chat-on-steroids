@@ -106,6 +106,8 @@ export function createWorkspaceDocks(host: HTMLElement) {
     bottom.hidden = !bottomOpen;
     bottomToggle.setAttribute('aria-expanded', String(bottomOpen)); bottomToggle.classList.toggle('is-active', bottomOpen);
     empty.hidden = active !== null;
+    bar.hidden = opened.length === 0;
+    if (bar.hidden) add.open = false;
     const signature = `${opened.join(',')}|${active ?? ''}`;
     if (signature !== tabSignature) {
       tabSignature = signature; tabs.replaceChildren();
@@ -125,7 +127,8 @@ export function createWorkspaceDocks(host: HTMLElement) {
             if (previous) activate(previous);
           }
           paint();
-          (tabs.querySelector<HTMLButtonElement>('[aria-selected="true"]') ?? plus).focus();
+          (tabs.querySelector<HTMLButtonElement>('[aria-selected="true"]')
+            ?? (bar.hidden ? launch.querySelector<HTMLButtonElement>('button:not(:disabled)') ?? rightToggle : plus)).focus();
         });
         tab.append(pick, remove); tabs.append(tab);
       }

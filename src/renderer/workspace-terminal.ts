@@ -10,7 +10,7 @@ type Tab = { id: string; projectId: string; title: string; node: HTMLElement; te
 
 /** A hidden panel retains its shells; each dock owns only the tabs it created. */
 export function createWorkspaceTerminal(onToggleBottom: () => void, initialMount: HTMLElement,
-  options: { id?: string; onEmpty?: () => void } = {}) {
+  options: { id?: string; onEmpty?: () => void; onClosePanel?: () => void } = {}) {
   const app = document.querySelector<HTMLElement>('.app')!;
   const panel = el('section', 'workspace-terminal'); panel.id = options.id ?? 'workspaceTerminal'; panel.hidden = true;
   ui(panel, 'aria-label', () => t('Terminal'));
@@ -29,7 +29,14 @@ export function createWorkspaceTerminal(onToggleBottom: () => void, initialMount
   add.append(el('span', '', () => t('Terminal')));
   addChoices.append(add); addMenu.append(addTrigger, addChoices);
   const empty = el('button', 'btn terminal-empty', () => t('Open a terminal in this project')) as HTMLButtonElement;
-  empty.type = 'button'; body.append(empty); bar.append(tabsHost, addMenu); panel.append(bar, body); initialMount.append(panel);
+  empty.type = 'button'; body.append(empty); bar.append(tabsHost, addMenu);
+  if (options.onClosePanel) {
+    const closePanel = button('i-x', 'Hide bottom panel');
+    closePanel.classList.add('terminal-panel-close');
+    closePanel.addEventListener('click', options.onClosePanel);
+    bar.append(closePanel);
+  }
+  panel.append(bar, body); initialMount.append(panel);
   const tabs = new Map<string, Tab>();
   const terminalTheme = () => {
     const colors = getComputedStyle(app);
@@ -40,7 +47,7 @@ export function createWorkspaceTerminal(onToggleBottom: () => void, initialMount
     const theme = terminalTheme();
     for (const tab of tabs.values()) tab.term.options.theme = theme;
   });
-  let project: LocalProject | null = null, selected: string | null = null, open = false;
+  let project: LocalProject | null = null, selected: string | null = null, open = false, createOnProject = false;
   const fit = (): void => {
     const tab = selected ? tabs.get(selected) : null;
     if (!tab || !open || !tab.node.getBoundingClientRect().height) return;
@@ -80,7 +87,7 @@ export function createWorkspaceTerminal(onToggleBottom: () => void, initialMount
     const term = new Terminal({ theme: terminalTheme(), cursorBlink: true, fontSize: 13, fontFamily: 'Cascadia Code, Consolas, monospace', scrollback: 5000, allowProposedApi: false });
     const addon = new FitAddon(); term.loadAddon(addon); term.open(node);
     const tab: Tab = { id, projectId: scope.id, title: scope.name, node, term, fit: addon, ready: false, exited: false, queued: 0, writes: Promise.resolve() };
-    tabs.set(id, tab); selected = id; setOpen(true); paint(); fit();
+    tabs.set(id, tab); selected = id; createOnProject = false; setOpen(true); paint(); fit();
     term.onData(data => {
       if (tab.exited || !tab.ready) return;
       if (tab.queued + data.length > 262_144) { toast(t('Terminal input is busy. Try a smaller paste.')); return; }
@@ -120,11 +127,15 @@ export function createWorkspaceTerminal(onToggleBottom: () => void, initialMount
   window.addEventListener('beforeunload', () => { observer.disconnect(); stopEvents(); stopAppearance(); for (const tab of tabs.values()) tab.term.dispose(); }, { once: true });
   paint();
   return {
-    update(value: LocalProject | null): void { project = value; paint(); },
+    update(value: LocalProject | null): void {
+      project = value; paint();
+      if (open && createOnProject && project && !tabs.size) void create();
+    },
     show(mount: HTMLElement, createIfEmpty = true): void {
       if (panel.parentElement !== mount) mount.append(panel);
       setOpen(true);
-      if (createIfEmpty && !tabs.size && project) void create();
+      createOnProject = createIfEmpty && !tabs.size;
+      if (createOnProject && project) void create();
     },
     newTab(): void { void create(); },
     hide(): void { setOpen(false); },
