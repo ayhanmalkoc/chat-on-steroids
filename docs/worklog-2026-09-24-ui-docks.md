@@ -162,3 +162,11 @@
   arrow. `npm run verify` passed privacy, notices and typecheck, then reproduced
   the known Windows browser UIA and accessibility failures; the broad run was
   stopped after those failures. No installed-app result is claimed.
+
+## Follow-up — localize terminal exit status before PR
+
+- The docked terminal branch still rendered hard-coded English exit text in its
+  tab and process output. Use the renderer's existing translation keys for both,
+  preserving the dock tab-change notification and the current terminal lifecycle.
+- Feature-branch checks: TypeScript typecheck and 58 focused renderer/terminal
+  tests passed. Package and installed-app behavior are checked separately.
