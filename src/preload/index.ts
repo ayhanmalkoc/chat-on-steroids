@@ -9,7 +9,9 @@ import type { UsageOverview } from '../shared/usage.js';
 import type { InputArgs, InputEntry } from '../main/session/input.js';
 import type { LocalProject } from '../shared/projects.js';
 import type { ProjectDirectoryListing, ProjectFileMutationResult, ProjectFilePreview, ProjectFileSaveResult, ProjectFilesChanged } from '../shared/project-files.js';
+import type { ProjectGitChanged, ProjectGitDiff, ProjectGitSnapshot } from '../shared/project-git.js';
 import type { SkillSummary, SkillLibrary, SkillsDraftScope } from '../shared/skills.js';
+import type { ToolEditReview } from '../shared/session.js';
 import type { PluginSnapshot, PluginInstallRequest, PluginConfigPatch } from '../shared/plugins.js';
 /**
  * The entire renderer-facing API.
@@ -82,7 +84,7 @@ export interface SessionDetail {
 }
 
 const api = {
-  terminalCreate: (id: string, projectId: string, cols: number, rows: number) => call<WorkspaceTerminalInfo>('workspaceTerminal:request', { action: 'create', id, projectId, cols, rows }),
+  terminalCreate: (id: string, projectId: string | null, cols: number, rows: number) => call<WorkspaceTerminalInfo>('workspaceTerminal:request', { action: 'create', id, projectId, cols, rows }),
   terminalWrite: (id: string, data: string) => call<void>('workspaceTerminal:request', { action: 'write', id, data }),
   terminalResize: (id: string, cols: number, rows: number) => call<void>('workspaceTerminal:request', { action: 'resize', id, cols, rows }),
   terminalAck: (id: string, count: number) => call<void>('workspaceTerminal:request', { action: 'ack', id, count }),
@@ -180,6 +182,15 @@ const api = {
   deleteProjectFileEntry: (projectId: string, path: string) => call<boolean>('projectFiles:delete', { projectId, path }),
   revealProjectFileEntry: (projectId: string, path = '') => call<boolean>('projectFiles:reveal', { projectId, path }),
   attachProjectFile: (projectId: string, path: string) => call<InputAttachment>('projectFiles:attach', { projectId, path }),
+  getProjectGitSnapshot: (projectId: string) => call<ProjectGitSnapshot>('projectGit:snapshot', { projectId }),
+  getProjectGitDiff: (projectId: string, path: string) => call<ProjectGitDiff>('projectGit:diff', { projectId, path }),
+  getToolEditReview: (sessionId: string, callId: string, changeIndex: number) =>
+    call<ToolEditReview | null>('sessions:toolEditReview', { sessionId, callId, changeIndex }),
+  onProjectGitChanged: (listener: (event: ProjectGitChanged) => void): (() => void) => {
+    const wrapped = (_event: unknown, change: ProjectGitChanged): void => listener(change);
+    ipcRenderer.on('projectGit:changed', wrapped);
+    return () => ipcRenderer.removeListener('projectGit:changed', wrapped);
+  },
   getSessionImage: (id: string, assetId: string) => call<string | null>('sessions:image', { id, assetId }),
   getImageStorage: () => call<ImageStorageInfo>('sessions:imageStorage'),
   clearImageStorage: (mode: ImageStorageClearMode) => call<ImageStorageClearResult>('sessions:clearImageStorage', { mode }),
