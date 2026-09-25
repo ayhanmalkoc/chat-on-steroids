@@ -3175,9 +3175,6 @@ select option::checkmark { order: 1; margin-inline-start: auto; color: var(--ink
 .agent-panel-body :is(.ev-tool_call, .ev-page_tool, .ev-agent_message) { margin: 0; }
 .agent-panel-body .ev-body { min-width: 0; }
 .agent-panel-body .said > b { display: none; }
-.file-panel-toggle { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; }
-.file-panel-toggle .ico { width: 15px; height: 15px; }
-.file-panel-toggle span { font-size: calc(11px * var(--text-scale, 1)); }
 .file-panel {
   --syntax-keyword: #6d28d9;
   --syntax-string: #047857;
@@ -3353,7 +3350,6 @@ select option::checkmark { order: 1; margin-inline-start: auto; color: var(--ink
 .file-confirm-dialog-detail { margin: -4px 0 4px; color: var(--soft); font-size: calc(11px * var(--text-scale, 1)); line-height: 1.5; }
 .file-dialog-danger { border-color: var(--red-line); background: var(--red-wash); color: var(--red); }
 .file-dialog-danger:hover:not(:disabled) { border-color: var(--red); background: var(--red-wash); color: var(--red); }
-.app[data-screen='settings'] :is(#agentPanelToggle, #filePanelToggle) { display: none; }
 @media (max-width: 850px) {
   [data-panel='chat'].has-agent-panel, [data-panel='chat'].has-file-panel { grid-template-columns: minmax(0, 1fr); }
   .has-agent-panel > .is-session, .has-file-panel > .is-session { display: none; }

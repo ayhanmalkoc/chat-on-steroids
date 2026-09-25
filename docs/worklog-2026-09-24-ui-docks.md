@@ -101,3 +101,14 @@
   UIA, Windows accessibility and MCP parser-recovery failures; the broad test
   run was stopped after those failures, so no full-suite pass is claimed.
   A packaged/install test was not run for this follow-up.
+
+## Follow-up — remove obsolete chat-edge panel buttons
+
+- The dock migration still appended legacy Files, Agents and Review toggle buttons
+  directly to the chat panel. Project/session updates could unhide them, leaving
+  clickable controls below the composer. The dock header and tabs now remain the
+  only mounted controls; standalone panel tests can still supply their toggle.
+- Added a renderer regression for the stray controls and preserved the dock
+  toggles. On the feature branch, that regression, 51 adjacent panel tests and
+  TypeScript typecheck passed. Package and installed-app behavior were not
+  checked at this point.

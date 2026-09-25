@@ -3964,17 +3964,9 @@ export function initChat(next: Deps): void {
   const chatHost = document.querySelector<HTMLElement>('[data-panel="chat"]')!;
   const docks = createWorkspaceDocks(chatHost);
   workspaceDocks = docks;
-  const fileToggle = el('button', 'btn file-panel-toggle') as HTMLButtonElement;
-  fileToggle.id = 'filePanelToggle'; fileToggle.type = 'button'; fileToggle.hidden = true;
-  fileToggle.append(icon('i-folder'));
-  ui(fileToggle, 'aria-label', () => t('Toggle Files side panel')); fileToggle.setAttribute('aria-expanded', 'false');
-  const agentToggle = el('button', 'btn btn-icon', '◫') as HTMLButtonElement;
-  agentToggle.id = 'agentPanelToggle'; agentToggle.type = 'button'; agentToggle.hidden = true;
-  ui(agentToggle, 'aria-label', () => t("Toggle sub-agent side panel")); agentToggle.setAttribute('aria-expanded', 'false');
-  chatHost.append(fileToggle, agentToggle);
   const agentToolGroups = new Map<string, HTMLDetailsElement>();
   agentPanel = createAgentPanel({
-    host: chatHost, mount: docks.body, toggle: agentToggle,
+    host: chatHost, mount: docks.body,
     onShow: () => { filePanel?.hide(); docks.adopt('agents'); },
     onEscape: () => { docks.setOpen(false); docks.rightToggle.focus(); },
     load: id => run(api.getSession(id, { limit: 160 })), openMain: selectSession, working: sessionWorking,
@@ -4150,7 +4142,7 @@ export function initChat(next: Deps): void {
     return true;
   };
   filePanel = createFilePanel({
-    host: chatHost, mount: docks.body, toggle: fileToggle,
+    host: chatHost, mount: docks.body,
     onShow: () => {
       agentPanel?.hide(); docks.adopt('files');
     },
@@ -4162,10 +4154,8 @@ export function initChat(next: Deps): void {
     }
   });
   filePanel.update(selectedLocalProject());
-  const reviewToggle = el('button', 'btn') as HTMLButtonElement;
-  reviewToggle.hidden = true; reviewToggle.type = 'button'; chatHost.append(reviewToggle);
   reviewPanel = createFilePanel({
-    host: chatHost, mount: docks.body, toggle: reviewToggle, reviewOnly: true,
+    host: chatHost, mount: docks.body, reviewOnly: true,
     onShow: () => docks.adopt('review'),
     onEscape: () => { docks.setOpen(false); docks.rightToggle.focus(); }
   });

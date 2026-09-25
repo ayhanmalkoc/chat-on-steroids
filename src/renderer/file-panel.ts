@@ -14,7 +14,7 @@ import type { ProjectPdfViewer } from './file-pdf-viewer.js';
 interface FilePanelOptions {
   host: HTMLElement;
   mount?: HTMLElement;
-  toggle: HTMLButtonElement;
+  toggle?: HTMLButtonElement;
   reviewOnly?: boolean;
   onOpenChanges?: () => void;
   onEscape?: () => void;
@@ -511,7 +511,7 @@ export function createFilePanel(options: FilePanelOptions) {
     destroyDiffViewer();
     pane.hidden = true;
     if (!options.mount) options.host.classList.remove('has-file-panel');
-    options.toggle.setAttribute('aria-expanded', 'false');
+    options.toggle?.setAttribute('aria-expanded', 'false');
     syncWatches();
   }
 
@@ -520,7 +520,7 @@ export function createFilePanel(options: FilePanelOptions) {
     options.onShow?.();
     pane.hidden = false;
     if (!options.mount) options.host.classList.add('has-file-panel');
-    options.toggle.setAttribute('aria-expanded', 'true');
+    options.toggle?.setAttribute('aria-expanded', 'true');
     if (mode === 'files' && !listings.has('')) await loadDirectory('');
     else render();
     if (reconcile) void reconcileGitChanges();
@@ -1578,9 +1578,9 @@ export function createFilePanel(options: FilePanelOptions) {
     if (editingPath && event.key === 'Escape') return;
     if (event.key !== 'Escape') return;
     event.preventDefault(); hide();
-    if (options.onEscape) options.onEscape(); else options.toggle.focus();
+    if (options.onEscape) options.onEscape(); else options.toggle?.focus();
   });
-  options.toggle.onclick = () => { if (pane.hidden) void show(); else hide(); };
+  if (options.toggle) options.toggle.onclick = () => { if (pane.hidden) void show(); else hide(); };
   if (!options.reviewOnly) window.api.onProjectFilesChanged?.(change => { void handleWatchedChange(change); });
   window.api.onProjectGitChanged?.((change: ProjectGitChanged) => {
     if (change.projectId === project?.id) scheduleGitReconcile();
@@ -1601,8 +1601,10 @@ export function createFilePanel(options: FilePanelOptions) {
       }
       project = next;
       if (changed) watchSignature = '';
-      options.toggle.hidden = next === null;
-      ui(options.toggle, 'title', () => next ? t('Files · {0}', [next.name]) : t('Files'));
+      if (options.toggle) {
+        options.toggle.hidden = next === null;
+        ui(options.toggle, 'title', () => next ? t('Files · {0}', [next.name]) : t('Files'));
+      }
       if (!changed) {
         if (labelChanged) renderTree();
         return;

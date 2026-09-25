@@ -8,7 +8,8 @@ import type { Handoff, SessionEvent, SessionSummary } from '../src/shared/sessio
 import type { InputArgs, InputEntry } from '../src/main/session/input.js';
 import type { LocalProject } from '../src/shared/projects.js';
 vi.mock('../src/renderer/workspace-terminal.js', () => ({ createWorkspaceTerminal: () => ({
-  update: vi.fn(), show: vi.fn(), hide: vi.fn(), hasTabs: () => false
+  update: vi.fn(), show: vi.fn(), hide: vi.fn(), hasTabs: () => false,
+  tabs: () => [], newTab: () => null, selectTab: vi.fn(), closeTab: vi.fn()
 }) }));
 vi.mock('../src/renderer/pet.js', () => ({ initPet: () => () => {} }));
 vi.mock('../src/renderer/file-code-editor.js', () => ({
@@ -325,6 +326,18 @@ async function boot(events: SessionEvent[], selectExisting = true, pausedHelpers
     }
   };
 }
+
+it('keeps legacy Files, Agents and Review toggles out of the chat while dock controls remain available', async () => {
+  const project: LocalProject = { id: '33333333-3333-4333-8333-333333333333', name: 'Workspace', path: '/workspace', createdAt: T0 };
+  const { w } = await boot([], false, [], [project]);
+  const chat = w.document.querySelector('[data-panel="chat"]')!;
+  expect(chat.querySelectorAll('#filePanelToggle, #agentPanelToggle, .file-panel-toggle')).toHaveLength(0);
+  expect([...chat.children].filter(node => node.tagName === 'BUTTON')).toHaveLength(0);
+  expect(w.document.getElementById('rightDockToggle')).not.toBeNull();
+  expect(w.document.getElementById('terminalToggle')).not.toBeNull();
+  w.document.getElementById('rightDockToggle')!.click();
+  expect(w.document.getElementById('workDockRight')?.hidden).toBe(false);
+});
 
 it('patches native reactions in place and hides streamed envelopes without changing authored messages', async () => {
   const user: SessionEvent = { kind: 'user_message', seq: 1, origin: 1, time: T0, source: 'extension', messageId: 'reaction-user', message: text('Question') };
