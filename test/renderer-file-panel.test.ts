@@ -359,8 +359,8 @@ it('shows Files and the read-only Review projection at once without a second fil
   await review.show(); await tick();
   expect(right.querySelector<HTMLElement>('.file-tree')?.hidden).toBe(false);
   expect(bottom.querySelector<HTMLElement>('.file-changes-view')?.hidden).toBe(false);
-  expect(bottom.querySelector('.file-panel-toolbar .file-panel-changes-toggle')).toBeNull();
-  expect(bottom.querySelector('.file-panel-toolbar .file-panel-action')).toBeNull();
+  expect(bottom.querySelector('.file-panel-toolbar')).toBeNull();
+  expect(bottom.querySelector('.file-changes-header .file-panel-refresh')).not.toBeNull();
   expect(window.api.listProjectFiles).toHaveBeenCalledTimes(1);
   expect(window.api.watchProjectFiles).toHaveBeenCalledTimes(fileWatchCalls);
   expect(window.api.getProjectGitSnapshot).toHaveBeenCalled();
@@ -377,7 +377,8 @@ it('returns a recorded edit to Review rather than exposing Files actions', async
   host.querySelector<HTMLButtonElement>('.file-changes-back')!.click(); await tick();
   expect(host.querySelector<HTMLElement>('.file-tree')?.hidden).toBe(true);
   expect(host.querySelector<HTMLElement>('.file-changes-view')?.hidden).toBe(false);
-  expect(host.querySelector('.file-panel-toolbar .file-panel-action')).toBeNull();
+  expect(host.querySelector('.file-panel-toolbar')).toBeNull();
+  expect(host.querySelector('.file-changes-header .file-panel-refresh')).not.toBeNull();
   expect(window.api.saveProjectFile).not.toHaveBeenCalled();
 });
 

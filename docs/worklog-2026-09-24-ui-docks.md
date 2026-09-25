@@ -112,3 +112,15 @@
   toggles. On the feature branch, that regression, 51 adjacent panel tests and
   TypeScript typecheck passed. Package and installed-app behavior were not
   checked at this point.
+
+## Follow-up — compact dock headers and horizontal controls
+
+- Removed Review's refresh-only toolbar and placed Refresh in its existing
+  Changes/Diff header. Files actions remain in one horizontally scrollable row,
+  while Files actions and dock tabs hide their scrollbars without clipping the
+  controls. Removed the extra text grid item from the accessible Chats refresh
+  icon so it centers vertically in its sidebar heading.
+- Feature-branch checks: 89 focused renderer tests, TypeScript typecheck, and
+  the isolated Chromium workspace fixture passed. The fixture checked the
+  Review header, Chats refresh alignment, and actual horizontal Files toolbar
+  scrolling at 820px with hidden scrollbars. No installed-app result is claimed.

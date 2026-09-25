@@ -74,6 +74,21 @@ it('keeps the context circle in the gear group rather than an auto-placed compos
   expect(document.getElementById('contextMeterInfo')!.parentElement?.id).toBe('contextMeter');
 });
 
+it('centers the accessible Chats refresh icon without an extra grid text row', () => {
+  const refresh = document.getElementById('chatRefresh')!;
+  expect(refresh.getAttribute('aria-label')).toBe('Refresh chats');
+  expect(refresh.children).toHaveLength(1);
+  expect(refresh.firstElementChild?.tagName.toLowerCase()).toBe('svg');
+  expect(refresh.textContent?.trim()).toBe('');
+});
+
+it('keeps dock tabs and Files actions on one horizontally scrollable row without visible scrollbars', () => {
+  expect(css).toMatch(/\.work-dock-tabs\s*\{[^}]*overflow-x:\s*auto;[^}]*scrollbar-width:\s*none;/);
+  expect(css).toMatch(/\.work-dock-tabs::-webkit-scrollbar\s*\{\s*display:\s*none;/);
+  expect(css).toMatch(/\.file-panel-toolbar\s*\{[^}]*flex-wrap:\s*nowrap;[^}]*overflow-x:\s*auto;[^}]*scrollbar-width:\s*none;/);
+  expect(css).toMatch(/\.file-panel-toolbar::-webkit-scrollbar\s*\{\s*display:\s*none;/);
+});
+
 it('does not expose a periodic Astra continuation outside session_finish', () => {
   expect(document.getElementById('goalImpulseMinutes')).toBeNull();
   expect(chatSource).not.toContain("number('goalImpulseMinutes'");
@@ -517,10 +532,11 @@ describe('the window as a whole', () => {
   });
 
   it('never scrolls sideways', () => {
-    // Wide authored tables/code may scroll locally; the surrounding app must not.
+    // Wide authored content and compact dock controls may scroll locally; the app must not.
     const horizontal = [...css.matchAll(/([^{}]+)\{[^{}]*overflow-x:\s*(?:auto|scroll)[^{}]*\}/g)];
     expect(horizontal.map(match => match[1]!.trim())).toEqual([
       '.msg.rich .markdown-table',
+      '.file-panel-toolbar',
       '.file-preview-markdown pre',
       '.file-preview-markdown-table',
       '.file-pdf-viewport',

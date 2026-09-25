@@ -112,6 +112,7 @@ app.whenReady().then(async () => {
     };
     await win.loadURL(server.resolvedUrls.local[0] + 'fixture.html');
     await until('window.fixtureReady && document.querySelectorAll(".sess[data-id]").length===3');
+    assert.ok(await js(`(()=>{const button=document.getElementById('chatRefresh');const heading=button.closest('.sidebar-session-heading');const a=button.getBoundingClientRect(),b=heading.getBoundingClientRect();return button.children.length===1&&Math.abs((a.top+a.bottom-b.top-b.bottom)/2)<1})()`));
     assert.equal(await js('document.querySelectorAll("#projectList .sess[data-id]").length'),2);
     assert.equal(await js('document.querySelectorAll("#chatList .sess[data-id]").length'),1);
     await js(`document.querySelector('.sess[data-id="task-0"]').click()`);
@@ -131,7 +132,7 @@ app.whenReady().then(async () => {
     await screenshot('git-changes');
     assert.equal(await js('document.querySelector(".review-panel .file-changes-header-title").textContent'),'Working tree');
     assert.equal(await js('document.querySelector(".review-panel .file-change-row[data-path=\\"README.md\\"] .file-change-status").textContent'),'M');
-    assert.ok(await js(`!document.querySelector('.review-panel .file-panel-toolbar button[title="New file"],.review-panel .file-panel-toolbar button[title="Delete"]')`));
+    assert.ok(await js(`!document.querySelector('.review-panel .file-panel-toolbar') && !!document.querySelector('.review-panel .file-changes-header .file-panel-refresh')`));
     assert.deepEqual(await js(`[...document.querySelectorAll('.header-dock-controls > button')].map(button=>button.id)`),
       ['rightDockExpand','terminalToggle','rightDockToggle']);
     assert.equal(await js(`document.querySelector('#workDockRight .work-dock-bar > .btn-icon')`),null);
@@ -161,6 +162,7 @@ app.whenReady().then(async () => {
         fits:r.left>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1,width:r.width,height:r.height,
         title:document.querySelector('.file-panel').getAttribute('aria-label'),overflow:document.documentElement.scrollWidth>innerWidth};})()`);
       assert.ok(measured.fits && !measured.overflow && measured.width>200,JSON.stringify({width,zoom,measured}));
+      if (width === 820) assert.ok(await js(`(()=>{const bar=document.querySelector('.file-panel:not([hidden]) .file-panel-toolbar');const tabs=document.querySelector('#workDockRight .work-dock-tabs');bar.scrollLeft=bar.scrollWidth;const scrolls=bar.scrollWidth>bar.clientWidth&&bar.scrollLeft>0;bar.scrollLeft=0;return scrolls&&getComputedStyle(bar).flexWrap==='nowrap'&&getComputedStyle(bar).scrollbarWidth==='none'&&getComputedStyle(tabs).overflowX==='auto'&&getComputedStyle(tabs).scrollbarWidth==='none'})()`));
       results.push({width,height,zoom,language,...measured});
       await screenshot(`files-${language}-${width}`);
     }

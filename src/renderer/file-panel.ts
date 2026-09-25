@@ -253,7 +253,7 @@ export function createFilePanel(options: FilePanelOptions) {
   changesBadge.hidden = true;
   changes.append(changesBadge);
   if (!options.reviewOnly) toolbar.append(newFile, newFolder, rename, remove, reveal, changes);
-  toolbar.append(refresh);
+  if (!options.reviewOnly) toolbar.append(refresh);
 
   const body = el('div', 'file-panel-body');
   const tree = el('div', 'file-tree'); tree.setAttribute('role', 'tree');
@@ -278,6 +278,7 @@ export function createFilePanel(options: FilePanelOptions) {
   });
   const changesHeaderTitle = el('strong', 'file-changes-header-title', () => t('Working tree'));
   changesHeader.append(backToFiles, changesHeaderTitle);
+  if (options.reviewOnly) changesHeader.append(refresh);
   const changesList = el('div', 'file-changes-list');
   changesList.setAttribute('role', 'region');
   ui(changesList, 'aria-label', () => t('Git changes'));
@@ -289,7 +290,8 @@ export function createFilePanel(options: FilePanelOptions) {
   previewResize.setAttribute('aria-orientation', 'horizontal');
   ui(previewResize, 'aria-label', () => t('Resize file preview'));
   body.append(tree, changesView, preview);
-  pane.append(toolbar, body); (options.mount ?? options.host).append(pane);
+  if (!options.reviewOnly) pane.append(toolbar);
+  pane.append(body); (options.mount ?? options.host).append(pane);
 
   let project: LocalProject | null = null;
   let generation = 0;
