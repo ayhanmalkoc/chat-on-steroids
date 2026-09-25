@@ -361,6 +361,9 @@ it('shows Files and the read-only Review projection at once without a second fil
   expect(bottom.querySelector<HTMLElement>('.file-changes-view')?.hidden).toBe(false);
   expect(bottom.querySelector('.file-panel-toolbar')).toBeNull();
   expect(bottom.querySelector('.file-changes-header .file-panel-refresh')).not.toBeNull();
+  expect(bottom.querySelector('.file-changes-header')?.lastElementChild?.classList.contains('file-panel-refresh')).toBe(true);
+  expect(bottom.querySelector('.file-changes-header-content')?.contains(bottom.querySelector('.file-changes-header-title'))).toBe(true);
+  expect(bottom.querySelector('.file-changes-header-content')?.contains(bottom.querySelector('.file-panel-refresh'))).toBe(false);
   expect(window.api.listProjectFiles).toHaveBeenCalledTimes(1);
   expect(window.api.watchProjectFiles).toHaveBeenCalledTimes(fileWatchCalls);
   expect(window.api.getProjectGitSnapshot).toHaveBeenCalled();

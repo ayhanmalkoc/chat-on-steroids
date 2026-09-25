@@ -124,3 +124,17 @@
   the isolated Chromium workspace fixture passed. The fixture checked the
   Review header, Chats refresh alignment, and actual horizontal Files toolbar
   scrolling at 820px with hidden scrollbars. No installed-app result is claimed.
+
+## Follow-up — fixed Review refresh and unified tab hover
+
+- Split the Review header into a locally scrollable title/back area and a fixed
+  right refresh control. Long localized labels no longer move the refresh action.
+- Moved dock-tab hover feedback to the whole tab capsule, suppressing separate
+  button hover fills while retaining independent keyboard focus outlines and
+  actions for selecting and closing a tab.
+- Feature-branch checks: 89 focused renderer tests, TypeScript typecheck,
+  production bundle build, and the isolated Electron workspace fixture passed.
+  `npm run verify` passed privacy, notices and typecheck, then again reported
+  the known Windows browser UIA and accessibility failures; the broad run was
+  stopped after those failures, so no full-suite pass is claimed. No package or
+  installed-app check is claimed.

@@ -87,6 +87,11 @@ it('keeps dock tabs and Files actions on one horizontally scrollable row without
   expect(css).toMatch(/\.work-dock-tabs::-webkit-scrollbar\s*\{\s*display:\s*none;/);
   expect(css).toMatch(/\.file-panel-toolbar\s*\{[^}]*flex-wrap:\s*nowrap;[^}]*overflow-x:\s*auto;[^}]*scrollbar-width:\s*none;/);
   expect(css).toMatch(/\.file-panel-toolbar::-webkit-scrollbar\s*\{\s*display:\s*none;/);
+  expect(css).toMatch(/\.review-panel \.file-changes-header-content\s*\{[^}]*overflow-x:\s*auto;[^}]*scrollbar-width:\s*none;/);
+  expect(css).toMatch(/\.review-panel \.file-changes-header-content::-webkit-scrollbar\s*\{\s*display:\s*none;/);
+  expect(css).toMatch(/\.work-dock-tab:is\(\.is-selected, :hover, :focus-within\)\s*\{\s*background:\s*var\(--hover\);/);
+  expect(css).toMatch(/\.work-dock-bar \.work-dock-tab > \.btn:hover:not\(:disabled\)\s*\{\s*background:\s*transparent;/);
+  expect(css).toMatch(/\.work-dock-tab > \.btn:focus-visible\s*\{\s*outline:/);
 });
 
 it('does not expose a periodic Astra continuation outside session_finish', () => {
@@ -537,6 +542,7 @@ describe('the window as a whole', () => {
     expect(horizontal.map(match => match[1]!.trim())).toEqual([
       '.msg.rich .markdown-table',
       '.file-panel-toolbar',
+      '.review-panel .file-changes-header-content',
       '.file-preview-markdown pre',
       '.file-preview-markdown-table',
       '.file-pdf-viewport',

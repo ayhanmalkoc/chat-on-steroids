@@ -277,7 +277,9 @@ export function createFilePanel(options: FilePanelOptions) {
     }
   });
   const changesHeaderTitle = el('strong', 'file-changes-header-title', () => t('Working tree'));
-  changesHeader.append(backToFiles, changesHeaderTitle);
+  const changesHeaderContent = el('div', 'file-changes-header-content');
+  changesHeaderContent.append(backToFiles, changesHeaderTitle);
+  changesHeader.append(changesHeaderContent);
   if (options.reviewOnly) changesHeader.append(refresh);
   const changesList = el('div', 'file-changes-list');
   changesList.setAttribute('role', 'region');
