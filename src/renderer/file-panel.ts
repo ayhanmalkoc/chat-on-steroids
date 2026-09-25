@@ -241,6 +241,7 @@ export function createFilePanel(options: FilePanelOptions) {
   ui(refresh, 'title', () => t('Refresh files')); ui(refresh, 'aria-label', () => t('Refresh files'));
 
   const toolbar = el('div', 'file-panel-toolbar');
+  const toolbarActions = el('div', 'file-panel-toolbar-actions');
   const newFile = actionButton(() => t('New file'), 'i-plus', () => createEntry('file'));
   const newFolder = actionButton(() => t('New folder'), 'i-folder', () => createEntry('directory'));
   const rename = actionButton(() => t('Rename'), 'i-pencil', renameSelection);
@@ -252,8 +253,10 @@ export function createFilePanel(options: FilePanelOptions) {
   const changesBadge = el('span', 'file-panel-changes-badge');
   changesBadge.hidden = true;
   changes.append(changesBadge);
-  if (!options.reviewOnly) toolbar.append(newFile, newFolder, rename, remove, reveal, changes);
-  if (!options.reviewOnly) toolbar.append(refresh);
+  if (!options.reviewOnly) {
+    toolbarActions.append(newFile, newFolder, rename, remove, reveal, changes);
+    toolbar.append(toolbarActions, refresh);
+  }
 
   const body = el('div', 'file-panel-body');
   const tree = el('div', 'file-tree'); tree.setAttribute('role', 'tree');

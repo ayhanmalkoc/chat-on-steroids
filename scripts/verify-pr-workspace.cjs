@@ -162,7 +162,22 @@ app.whenReady().then(async () => {
         fits:r.left>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1,width:r.width,height:r.height,
         title:document.querySelector('.file-panel').getAttribute('aria-label'),overflow:document.documentElement.scrollWidth>innerWidth};})()`);
       assert.ok(measured.fits && !measured.overflow && measured.width>200,JSON.stringify({width,zoom,measured}));
-      if (width === 820) assert.ok(await js(`(()=>{const bar=document.querySelector('.file-panel:not([hidden]) .file-panel-toolbar');const tabs=document.querySelector('#workDockRight .work-dock-tabs');bar.scrollLeft=bar.scrollWidth;const scrolls=bar.scrollWidth>bar.clientWidth&&bar.scrollLeft>0;bar.scrollLeft=0;return scrolls&&getComputedStyle(bar).flexWrap==='nowrap'&&getComputedStyle(bar).scrollbarWidth==='none'&&getComputedStyle(tabs).overflowX==='auto'&&getComputedStyle(tabs).scrollbarWidth==='none'})()`));
+      if (width === 820) assert.ok(await js(`(()=>{
+        const bar=document.querySelector('.file-panel:not([hidden]) .file-panel-toolbar');
+        const actions=bar.querySelector('.file-panel-toolbar-actions');
+        const refresh=bar.querySelector('.file-panel-refresh');
+        const tabs=document.querySelector('#workDockRight .work-dock-tabs');
+        const before=refresh.getBoundingClientRect().right;
+        actions.scrollLeft=actions.scrollWidth;
+        const scrolls=actions.scrollWidth>actions.clientWidth&&actions.scrollLeft>0;
+        const fixed=Math.abs(refresh.getBoundingClientRect().right-before)<1
+          &&Math.abs(refresh.getBoundingClientRect().right-(bar.getBoundingClientRect().right-10))<2;
+        actions.scrollLeft=0;
+        return scrolls&&fixed&&getComputedStyle(actions).flexWrap==='nowrap'
+          &&getComputedStyle(actions).scrollbarWidth==='none'
+          &&getComputedStyle(tabs).overflowX==='auto'
+          &&getComputedStyle(tabs).scrollbarWidth==='none';
+      })()`));
       results.push({width,height,zoom,language,...measured});
       await screenshot(`files-${language}-${width}`);
     }

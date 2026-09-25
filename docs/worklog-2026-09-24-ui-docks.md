@@ -138,3 +138,15 @@
   the known Windows browser UIA and accessibility failures; the broad run was
   stopped after those failures, so no full-suite pass is claimed. No package or
   installed-app check is claimed.
+
+## Follow-up — fixed Files refresh
+
+- Split Files' one-row toolbar into a horizontally scrollable action group and
+  a fixed refresh button at the right edge. The existing icon, label, action
+  and keyboard order are unchanged; only the action group scrolls.
+- Feature-branch checks: 89 focused renderer tests, TypeScript typecheck and
+  the Electron workspace fixture passed. The fixture confirmed at 820px that
+  the actions scroll while Refresh stays anchored. `npm run verify` passed
+  privacy, notices and typecheck, then reproduced the known Windows browser
+  UIA and accessibility failures; the broad run was stopped, so no full-suite
+  pass is claimed. Package and installed-app checks are recorded separately.
