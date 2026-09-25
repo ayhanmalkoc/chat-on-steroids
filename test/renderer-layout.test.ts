@@ -82,6 +82,11 @@ it('centers the accessible Chats refresh icon without an extra grid text row', (
   expect(refresh.textContent?.trim()).toBe('');
 });
 
+it('defines the back-arrow glyph used by Review navigation', () => {
+  const back = document.getElementById('i-back');
+  expect(back?.querySelector('path')?.getAttribute('d')).toBeTruthy();
+});
+
 it('keeps dock tabs and Files actions on one horizontally scrollable row without visible scrollbars', () => {
   expect(css).toMatch(/\.work-dock-tabs\s*\{[^}]*overflow-x:\s*auto;[^}]*scrollbar-width:\s*none;/);
   expect(css).toMatch(/\.work-dock-tabs::-webkit-scrollbar\s*\{\s*display:\s*none;/);

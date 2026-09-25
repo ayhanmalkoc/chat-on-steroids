@@ -150,3 +150,15 @@
   privacy, notices and typecheck, then reproduced the known Windows browser
   UIA and accessibility failures; the broad run was stopped, so no full-suite
   pass is claimed. Package and installed-app checks are recorded separately.
+
+## Follow-up — restore the Review back glyph
+
+- The Review navigation and previous-edited-file controls referenced `#i-back`,
+  but the renderer sprite did not define it. Their empty 14px icon slot and
+  existing gap appeared as unexplained space before the Changes label. Added
+  the missing left-arrow glyph without changing button semantics or sizing.
+- Feature-branch checks: 84 focused renderer tests, TypeScript typecheck and
+  the Electron workspace fixture passed; its diff screenshot visibly shows the
+  arrow. `npm run verify` passed privacy, notices and typecheck, then reproduced
+  the known Windows browser UIA and accessibility failures; the broad run was
+  stopped after those failures. No installed-app result is claimed.
