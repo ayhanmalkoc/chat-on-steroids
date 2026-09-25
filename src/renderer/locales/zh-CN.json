@@ -1533,5 +1533,14 @@
   "{0} · {1} · {2} ago": "{0} · {1} · {2} 前",
   "{0} — found {1} · app receipt {2} · owner {3} · tool activity {4}": "{0} — 找到 {1} · 应用回执 {2} · 所有者 {3} · 工具活动 {4}",
   "{0}: drag, click, or open the context menu": "{0}：拖动、单击或打开上下文菜单",
-  "… still writing. The full answer appears when it finishes.": "… 仍在编写。完成后会显示完整回答。"
+  "… still writing. The full answer appears when it finishes.": "… 仍在编写。完成后会显示完整回答。",
+  "Right panel": "右侧面板",
+  "New tab": "新建标签页",
+  "Hide right panel": "隐藏右侧面板",
+  "Restore right panel": "还原右侧面板",
+  "Expand right panel": "展开右侧面板",
+  "Toggle right panel": "切换右侧面板",
+  "Toggle bottom panel": "切换底部面板",
+  "Toggle bottom panel (Ctrl+`)": "切换底部面板 (Ctrl+`)",
+  "Close tab": "关闭标签页"
 }

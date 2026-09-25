@@ -1533,5 +1533,14 @@
   "{0} · {1} · {2} ago": "{0} · {1} · hace {2}",
   "{0} — found {1} · app receipt {2} · owner {3} · tool activity {4}": "{0} — encontrados {1} · recibo de la aplicación {2} · propietario {3} · actividad de herramientas {4}",
   "{0}: drag, click, or open the context menu": "{0}: arrastra, haz clic o abre el menú contextual",
-  "… still writing. The full answer appears when it finishes.": "… todavía escribiendo. La respuesta completa aparecerá cuando termine."
+  "… still writing. The full answer appears when it finishes.": "… todavía escribiendo. La respuesta completa aparecerá cuando termine.",
+  "Right panel": "Panel derecho",
+  "New tab": "Nueva pestaña",
+  "Hide right panel": "Ocultar panel derecho",
+  "Restore right panel": "Restaurar panel derecho",
+  "Expand right panel": "Ampliar panel derecho",
+  "Toggle right panel": "Mostrar u ocultar panel derecho",
+  "Toggle bottom panel": "Mostrar u ocultar panel inferior",
+  "Toggle bottom panel (Ctrl+`)": "Mostrar u ocultar panel inferior (Ctrl+`)",
+  "Close tab": "Cerrar pestaña"
 }

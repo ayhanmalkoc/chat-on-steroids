@@ -1533,5 +1533,14 @@
   "The helper returned an unusable continuation. Nothing was sent. Review the continuation instructions or choose another helper model.": "Yardımcı kullanılamaz bir devam döndürdü. Hiçbir şey gönderilmedi. Devam talimatlarını gözden geçirin veya başka bir yardımcı model seçin.",
   "The provider reported an error while generating the continuation. Check its status or choose another model.": "Sağlayıcı devamı oluştururken bir hata bildirdi. Durumunu kontrol edin veya başka bir model seçin.",
   "PDF exceeds the preview limit": "PDF önizleme sınırını aşıyor",
-  "PDF page dimensions exceed the preview limit": "PDF sayfası boyutları önizleme sınırını aşıyor"
+  "PDF page dimensions exceed the preview limit": "PDF sayfası boyutları önizleme sınırını aşıyor",
+  "Right panel": "Sağ panel",
+  "New tab": "Yeni sekme",
+  "Hide right panel": "Sağ paneli gizle",
+  "Restore right panel": "Sağ paneli daralt",
+  "Expand right panel": "Sağ paneli genişlet",
+  "Toggle right panel": "Sağ paneli aç/kapat",
+  "Toggle bottom panel": "Alt paneli aç/kapat",
+  "Toggle bottom panel (Ctrl+`)": "Alt paneli aç/kapat (Ctrl+`)",
+  "Close tab": "Sekmeyi kapat"
 }

@@ -1533,5 +1533,14 @@
   "The helper returned an unusable continuation. Nothing was sent. Review the continuation instructions or choose another helper model.": "L’assistant a renvoyé une continuation inutilisable. Rien n’a été envoyé. Vérifiez les instructions de continuation ou choisissez un autre modèle d’assistant.",
   "The provider reported an error while generating the continuation. Check its status or choose another model.": "Le fournisseur a signalé une erreur pendant la génération de la continuation. Vérifiez son état ou choisissez un autre modèle.",
   "PDF exceeds the preview limit": "Le PDF dépasse la limite d’aperçu",
-  "PDF page dimensions exceed the preview limit": "Les dimensions de la page PDF dépassent la limite d’aperçu"
+  "PDF page dimensions exceed the preview limit": "Les dimensions de la page PDF dépassent la limite d’aperçu",
+  "Right panel": "Panneau droit",
+  "New tab": "Nouvel onglet",
+  "Hide right panel": "Masquer le panneau droit",
+  "Restore right panel": "Rétablir le panneau droit",
+  "Expand right panel": "Agrandir le panneau droit",
+  "Toggle right panel": "Afficher ou masquer le panneau droit",
+  "Toggle bottom panel": "Afficher ou masquer le panneau inférieur",
+  "Toggle bottom panel (Ctrl+`)": "Afficher ou masquer le panneau inférieur (Ctrl+`)",
+  "Close tab": "Fermer l’onglet"
 }
